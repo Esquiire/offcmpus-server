@@ -6,6 +6,40 @@ import {Property} from './Property'
 import {ObjectId} from 'mongodb'
 import mongoose from 'mongoose'
 
+/**
+ * SearchStatus
+ * @desc describes the status of whether a student
+ * is looking for a property or not. And if so, for
+ * which time period.
+ */
+@ObjectType({description: "Status of student search"})
+export class SearchStatus {
+
+  // @prop -> date_updated: The ISO string of the last date the status was updated
+  @Field(type => String)
+  @prop({type: String})
+  date_updated: string;
+
+  // @prop -> searching: If true, the student is searching for a propety
+  @Field(type => Boolean)
+  @prop({type: Boolean})
+  searching: boolean;
+
+  // prop -> search_start: The start date the student is searching for, if searching is true
+  @Field(type => String, {nullable: true})
+  @prop({type: String})
+  search_start?: string
+
+  // prop -> search_end: The end date the student is searching for, if searching is true
+  @Field(type => String, {nullable: true})
+  @prop({type: String})
+  search_end?: string
+}
+
+/**
+ * StudentUserSettings
+ * @desc describes the settings object for a student
+ */
 @ObjectType({description: "Student User Settinhs"})
 export class StudentUserSettings {
   @Field(type => Boolean)
@@ -25,6 +59,11 @@ export const initializeStudentSettings = (student: Student) => {
   }
 }
 
+/**
+ * CasAuthInfo
+ * @desc describes the CAS authentication information
+ * for a student logging in through CAS auth 3.0 system.
+ */
 @ObjectType({description: "Cas Auth Information"})
 class CasAuthInfo {
   @Field(type => String, { nullable: true })
@@ -43,6 +82,11 @@ export class PropertyCollectionEntries{
   collection_entries: Partial<Property>[];
 }
 
+/**
+ * Student
+ * @desc The student object that describes a student
+ * user.
+ */
 @ObjectType({description: "Student model"})
 export class Student {
   @Field(() => ID)
@@ -87,6 +131,10 @@ export class Student {
   @Field(type => StudentUserSettings, {nullable: true})
   @prop({type: StudentUserSettings})
   user_settings?: StudentUserSettings;
+
+  @Field(type => SearchStatus, {nullable: true})
+  @prop({type: SearchStatus})
+  search_status?: SearchStatus;
 }
 
 @InputType()
