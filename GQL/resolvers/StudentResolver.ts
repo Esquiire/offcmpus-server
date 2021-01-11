@@ -116,7 +116,9 @@ export class StudentResolver {
     @Arg("id") id: string,
     @Arg("searching") searching: boolean,
     @Arg("search_start", {nullable: true}) search_start?: string,
-    @Arg("search_end", {nullable: true}) search_end?: string
+    @Arg("search_end", {nullable: true}) search_end?: string,
+    @Arg("price_start", {nullable: true}) price_start?: number,
+    @Arg("price_end", {nullable: true}) price_end?: number
   ): Promise<StudentAPIResponse>
   {
 
@@ -135,10 +137,14 @@ export class StudentResolver {
     if (searching) {
       student.search_status.search_start = search_start;
       student.search_status.search_end = search_end;
+      student.search_status.price_start = price_start;
+      student.search_status.price_end = price_end;
     }
     else {
       student.search_status.search_start = undefined;
       student.search_status.search_end = undefined;
+      student.search_status.price_start = undefined;
+      student.search_status.price_end = undefined;
     }
 
     // set date_updated

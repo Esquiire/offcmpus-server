@@ -34,6 +34,16 @@ export class SearchStatus {
   @Field(type => String, {nullable: true})
   @prop({type: String})
   search_end?: string
+
+  // prop -> price_start: The start price for lease
+  @Field(type => Number, {nullable: true})
+  @prop({type: Number})
+  price_start?: number;
+
+  // prop -> price_end: The end price for lease
+  @Field(type => Number, {nullable: true})
+  @prop({type: Number})
+  price_end?: number;
 }
 
 /**

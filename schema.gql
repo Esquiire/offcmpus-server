@@ -149,6 +149,7 @@ type Mutation {
   updatePhoneNumber(landlord_id: String!, phone_number: String!): LandlordAPIResponse!
   updatePropertyDetails(bathrooms: Int, description: String, furnished: Boolean, has_ac: Boolean, has_heater: Boolean, has_washer: Boolean, property_id: String!, rooms: Int, sq_ft: Int): PropertyAPIResponse!
   updateStudent(_id: String!, new_student: StudentInput!): StudentAPIResponse!
+  updateStudentSearchStatus(id: String!, search_end: String, search_start: String, searching: Boolean!): StudentAPIResponse!
 }
 
 """Property Ownership Document Information"""
@@ -297,6 +298,16 @@ type Query {
   verifyAddress(address_1: String!, address_2: String!, city: String!, state: String!, zip: String!): AddressVerificationAPIResponse!
 }
 
+"""Status of student search"""
+type SearchStatus {
+  date_updated: String!
+  price_end: Float
+  price_start: Float
+  search_end: String
+  search_start: String
+  searching: Boolean!
+}
+
 """Describes a status change in an ownership"""
 type StatusChangeInfo {
   changed_from: String!
@@ -318,6 +329,7 @@ type Student {
   last_name: String!
   phone_number: String!
   saved_collection: [String!]
+  search_status: SearchStatus
   type: String
   user_settings: StudentUserSettings
 }
