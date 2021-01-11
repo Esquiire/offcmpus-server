@@ -5,13 +5,28 @@ import chalk from 'chalk'
 import {
     Feedback,
     FeedbackModel,
-    FeedbackAPIResponse
+    FeedbackAPIResponse,
+    FeedbackCollection,
+    FeedbackCollectionAPIResponse
 } from '../entities/Feedback'
 const ObjectId = mongoose.Types.ObjectId
 
 @Resolver()
 export class FeedbackResolver {
+    @Query(() => FeedbackCollectionAPIResponse)
+    async getFeedback(
+        @Arg("offset") offset: number,
+        @Arg("limit") limit: number): Promise<FeedbackCollectionAPIResponse>
+        {
+            let feedbacks: DocumentType <Feedback>[] = await FeedbackModel.find().skip(offset).limit(limit) as DocumentType <Feedback>[]
+            return {
+                success: true,
+                data: {
+                    feedback_collection: feedbacks
+                }
+            }
 
+        }
     /**
      * submitFeedback()
      * @desc Create a new feedback entry with the message, submitter info,

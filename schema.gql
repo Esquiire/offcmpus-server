@@ -53,6 +53,17 @@ type FeedbackAPIResponse {
   success: Boolean!
 }
 
+"""a collection of feedback response"""
+type FeedbackCollection {
+  feedback_collection: [Feedback!]!
+}
+
+type FeedbackCollectionAPIResponse {
+  data: FeedbackCollection
+  error: String
+  success: Boolean!
+}
+
 """Institution Model"""
 type Institution {
   _id: ID!
@@ -268,6 +279,7 @@ type PushSubscriptionKeys {
 }
 
 type Query {
+  getFeedback(limit: Float!, offset: Float!): FeedbackCollectionAPIResponse!
   getInstitution(_id: String!): InstitutionAPIResponse!
   getLandlord(_id: String!): LandlordAPIResponse!
   getMatchingInstitutions(partial_name: String!): InstitutionListAPIResponse!

@@ -26,7 +26,16 @@ export class Feedback {
     tags: string[];
 }
 
+@ObjectType({description: "a collection of feedback response"})
+export class FeedbackCollection{
+    @Field(type => [Feedback])
+    @prop({type: [Feedback]})
+    feedback_collection: Feedback[]
+}
+
 @ObjectType()
 export class FeedbackAPIResponse extends APIResult(Feedback) {}
+@ObjectType()
+export class FeedbackCollectionAPIResponse extends APIResult(FeedbackCollection) {}
 
 export const FeedbackModel = getModelForClass(Feedback)
