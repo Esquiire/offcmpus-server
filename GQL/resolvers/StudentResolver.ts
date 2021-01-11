@@ -5,7 +5,8 @@ import {Student,
   PropertyCollectionEntriesAPIResponse, 
   CollectionFetchInput, 
   StudentModel, 
-  PropertyCollectionEntries} from '../entities/Student'
+  PropertyCollectionEntries,
+  SearchStatus} from '../entities/Student'
 import {Property, PropertyModel} from '../entities/Property'
 import {DocumentType} from "@typegoose/typegoose"
 import mongoose from 'mongoose'
@@ -100,6 +101,54 @@ export class StudentResolver {
       data: entries
     }
 
+  }
+
+  /**
+   * updateStudentSearchStatus
+   * @desc Update the status for the student with the id.
+   * @param id The id for the student to update the status for.
+   * @param searching Specify whether the student is looking for a property or not
+   * @param search_start Set the start date the student is looking for, if looking is set to true
+   * @param search_end Set the end date the student is looking for, if looking is set to true
+   */
+  @Mutation(() => StudentAPIResponse)
+  async updateStudentSearchStatus(
+    @Arg("id") id: string,
+    @Arg("searching") searching: boolean,
+    @Arg("search_start", {nullable: true}) search_start?: string,
+    @Arg("search_end", {nullable: true}) search_end?: string
+  ): Promise<StudentAPIResponse>
+  {
+
+    let student: DocumentType<Student> = await StudentModel.findById(id) as DocumentType<Student>
+    if (!student) {
+      return {
+        success: false,
+        error: "Student with id does not exist."
+      }
+    }
+
+    // add the search status, if it is not on the student object 
+    if (!student.search_status) student.search_status = new SearchStatus();
+
+    student.search_status.searching = searching;
+    if (searching) {
+      student.search_status.search_start = search_start;
+      student.search_status.search_end = search_end;
+    }
+    else {
+      student.search_status.search_start = undefined;
+      student.search_status.search_end = undefined;
+    }
+
+    // set date_updated
+    student.search_status.date_updated = new Date().toISOString();
+    let saved_student: DocumentType<Student> = await student.save() as DocumentType<Student>;
+
+    return {
+      success: true,
+      data: saved_student
+    }
   }
 
   /**
