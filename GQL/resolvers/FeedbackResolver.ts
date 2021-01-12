@@ -13,6 +13,10 @@ import {
 
 const ObjectId = mongoose.Types.ObjectId
 
+interface FeedbackPayload{
+    feedback: Feedback
+}
+
 @Resolver()
 export class FeedbackResolver {
 
@@ -20,14 +24,14 @@ export class FeedbackResolver {
         {topics: "FEEDBACKS"}
     )
     async newFeedback(
-        @Root() {submitter_id,user_type,message,date_submitted,tags}: Feedback,
+        @Root() {feedback}: FeedbackPayload,
     ): Promise<Feedback>{
         return{
-            submitter_id,
-            user_type,
-            message,
-            date_submitted,
-            tags
+            submitter_id : feedback.submitter_id,
+            user_type : feedback.user_type,
+            message : feedback.message,
+            date_submitted : feedback.date_submitted,
+            tags: feedback.tags
         }
     }
 
@@ -86,7 +90,8 @@ export class FeedbackResolver {
             if (saved_feedback) {
                 console.log(chalk.bgGreen(`✔ Successfully created new feedback!`))
                 //TRIGGER NEW SUBSCRIPTION TOPIC FEEDBACKS
-                await pubSub.publish("FEEDBACKS", new_feedback);
+                
+                await pubSub.publish("FEEDBACKS", {feedback : saved_feedback});
                 return {
                     success: true,
                     data: saved_feedback
