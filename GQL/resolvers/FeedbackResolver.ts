@@ -1,6 +1,7 @@
-import {Resolver, Mutation, Arg, Query} from 'type-graphql'
+import {Resolver, Mutation, Arg, Query,Subscription,PubSub,Root,Args} from 'type-graphql'
 import {DocumentType} from "@typegoose/typegoose"
 import mongoose from 'mongoose'
+import { PubSubEngine } from "graphql-subscriptions";
 import chalk from 'chalk'
 import {
     Feedback,
@@ -9,10 +10,31 @@ import {
     FeedbackCollection,
     FeedbackCollectionAPIResponse
 } from '../entities/Feedback'
+
 const ObjectId = mongoose.Types.ObjectId
+
+interface FeedbackPayload{
+    feedback: Feedback
+}
 
 @Resolver()
 export class FeedbackResolver {
+
+    @Subscription(returns => Feedback,
+        {topics: "FEEDBACKS"}
+    )
+    async newFeedback(
+        @Root() {feedback}: FeedbackPayload,
+    ): Promise<Feedback>{
+        return{
+            submitter_id : feedback.submitter_id,
+            user_type : feedback.user_type,
+            message : feedback.message,
+            date_submitted : feedback.date_submitted,
+            tags: feedback.tags
+        }
+    }
+
     @Query(() => FeedbackCollectionAPIResponse)
     async getFeedback(
         @Arg("offset") offset: number,
@@ -42,7 +64,8 @@ export class FeedbackResolver {
         @Arg("submitter_id") submitter_id: string,
         @Arg("user_type") user_type: string,
         @Arg("message") message: string,
-        @Arg("tags", type => [String]) tags: string[]): Promise<FeedbackAPIResponse>
+        @Arg("tags", type => [String]) tags: string[],
+        @PubSub() pubSub: PubSubEngine): Promise<FeedbackAPIResponse>
         {
 
             console.log(chalk.bgBlue(`👉 submitFeedback()`))
@@ -66,6 +89,9 @@ export class FeedbackResolver {
             let saved_feedback: DocumentType<Feedback> = await new_feedback.save();
             if (saved_feedback) {
                 console.log(chalk.bgGreen(`✔ Successfully created new feedback!`))
+                //TRIGGER NEW SUBSCRIPTION TOPIC FEEDBACKS
+                
+                await pubSub.publish("FEEDBACKS", {feedback : saved_feedback});
                 return {
                     success: true,
                     data: saved_feedback
