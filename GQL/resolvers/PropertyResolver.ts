@@ -245,9 +245,20 @@ export class PropertyResolver {
       return { success: false, error: `No property found` }
     }
 
+    let ownerships: DocumentType<Ownership>[] = 
+      await OwnershipModel.find({property_id, status: "confirmed"}) as DocumentType<Ownership>[];
+
+    if (ownerships.length != 1) {
+      console.error(`Attempting to modify details of a property that has ${ownerships.length} confirmed ownership documents.
+      Only 1 confirmed ownership document should exist for each property.`);
+      console.log(`\tproperty id: ${property_id}`);
+      ownerships.forEach((ownership_: DocumentType<Ownership>, i: number) =>
+        console.log(`\townership id (doc ${i + 1}): ${ownership_._id}`));
+      return { success: false, error: `Inconsistent records` };
+    }
+    
     // initialize details if the property doesn't have details
     if (!property.details) property.details = new PropertyDetails();
-    let ownership: DocumentType<Ownership> = await OwnershipModel.findOne({property_id}) as DocumentType<Ownership>
     
     // add the details provided
     if (description) property.details.description = description;
@@ -255,12 +266,12 @@ export class PropertyResolver {
       // we will create a lease for each room that is specified.
       // The room count of the property can only be modified if there is a matching
       // ownerhip document for this property.
-      if (ownership) {
-        let leases_: DocumentType<Lease>[] = await LeaseModel.find({ownership_id: ownership._id}) as DocumentType<Lease>[];
+      if (ownerships[0]) {
+        let leases_: DocumentType<Lease>[] = await LeaseModel.find({ownership_id: ownerships[0]._id}) as DocumentType<Lease>[];
         
         let leases_to_make = rooms - leases_.length;
         for (let i = 0; i < leases_to_make; ++i) {
-          let new_lease: DocumentType<Lease> = createEmptyLease({for_ownership_id: ownership._id}) as DocumentType<Lease>;
+          let new_lease: DocumentType<Lease> = createEmptyLease({for_ownership_id: ownerships[0]._id}) as DocumentType<Lease>;
           new_lease.save();
         }
 
