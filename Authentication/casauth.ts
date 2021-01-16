@@ -1,6 +1,6 @@
 import passport from 'passport'
 import chalk from 'chalk'
-import {StudentModel, Student} from '../GQL/entities/Student'
+import {StudentModel, Student, initializeStudentSearchStatus} from '../GQL/entities/Student'
 import {Institution, InstitutionModel} from '../GQL/entities/Institution'
 import {LandlordModel} from '../GQL/entities/Landlord'
 import {DocumentType} from "@typegoose/typegoose"
@@ -83,9 +83,10 @@ function(profile: any, done: Function) {
                 institution_id: institution_doc._id,
               }
             })
+            initializeStudentSearchStatus(new_student);
 
-            let added_student = await new_student.save()
-            done(null, added_student.toObject(), { new: true })
+            let added_student = await new_student.save();
+            done(null, added_student.toObject(), { new: true });
       
           }
           else {

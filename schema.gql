@@ -149,7 +149,7 @@ type Mutation {
   updatePhoneNumber(landlord_id: String!, phone_number: String!): LandlordAPIResponse!
   updatePropertyDetails(bathrooms: Int, description: String, furnished: Boolean, has_ac: Boolean, has_heater: Boolean, has_washer: Boolean, property_id: String!, rooms: Int, sq_ft: Int): PropertyAPIResponse!
   updateStudent(_id: String!, new_student: StudentInput!): StudentAPIResponse!
-  updateStudentSearchStatus(id: String!, search_end: String, search_start: String, searching: Boolean!): StudentAPIResponse!
+  updateStudentSearchStatus(id: String!, price_end: Float, price_start: Float, search_end: String, search_start: String, searching: Boolean!): StudentAPIResponse!
 }
 
 """Property Ownership Document Information"""

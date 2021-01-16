@@ -28,12 +28,12 @@ export class SearchStatus {
   // prop -> search_start: The start date the student is searching for, if searching is true
   @Field(type => String, {nullable: true})
   @prop({type: String})
-  search_start?: string
+  search_start?: string;
 
   // prop -> search_end: The end date the student is searching for, if searching is true
   @Field(type => String, {nullable: true})
   @prop({type: String})
-  search_end?: string
+  search_end?: string;
 
   // prop -> price_start: The start price for lease
   @Field(type => Number, {nullable: true})
@@ -44,6 +44,15 @@ export class SearchStatus {
   @Field(type => Number, {nullable: true})
   @prop({type: Number})
   price_end?: number;
+}
+/** 
+ * Modify the student object to provide default values
+ * for the student's search status properties.
+*/
+export const initializeStudentSearchStatus = (student: Student) => {
+  student.search_status = new SearchStatus();
+  student.search_status.date_updated = new Date().toISOString();
+  student.search_status.searching = false;
 }
 
 /**
@@ -60,6 +69,7 @@ export class StudentUserSettings {
   @prop({type: [PushSubscription]})
   push_subscriptions: PushSubscription[];
 }
+
 export const initializeStudentSettings = (student: Student) => {
   if (student.user_settings) return;
   student.user_settings = new StudentUserSettings();
