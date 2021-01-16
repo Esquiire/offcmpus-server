@@ -85,7 +85,7 @@ function(profile: any, done: Function) {
             })
             initializeStudentSearchStatus(new_student);
 
-            let added_student = await new_student.save();
+            let added_student: DocumentType<Student> = await new_student.save() as DocumentType<Student>;
             done(null, added_student.toObject(), { new: true });
       
           }
@@ -110,6 +110,8 @@ authRouter.get("/rpi/cas-auth", (req, res, next) => {
   res.header('Access-Control-Allow-Credentials', "true");
   passport.authenticate('cas', (err, user, info) => {
 
+    console.log(`In Passport CAS Authenticate.`);
+
     if (err) {
       console.log(`An error occurred ...`)
       console.log(err);
@@ -118,9 +120,21 @@ authRouter.get("/rpi/cas-auth", (req, res, next) => {
     else {
       req.logIn(user, (login_err) => {
 
-        if (login_err) return next(login_err);
-        else if (info.new) res.redirect(`http://${process.env.FRONTEND_IP}:3000/student/register/complete`)
-        else res.redirect(`http://localhost:3000/`)
+        console.log(`Logging in student:`);
+        console.log(`Login error? ${login_err}`);
+
+        if (login_err) {
+          console.log(`Condition 1`);
+          return next(login_err);
+        }
+        else if (info.new) {
+          console.log(`Condition 2`);
+          res.redirect(`http://${process.env.FRONTEND_IP}:3000/student/register/complete`)
+        }
+        else {
+          console.log(`Condition 3`);
+          res.redirect(`http://localhost:3000/`)
+        }
 
       })
     }
@@ -129,6 +143,9 @@ authRouter.get("/rpi/cas-auth", (req, res, next) => {
 });
 
 authRouter.get("/user", (req, res) => {
+
+  console.log(req.headers);
+
   res.json({
     user: req.user,
     authenticated: req.isAuthenticated()
