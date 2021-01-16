@@ -132,6 +132,36 @@ type LandlordUserSettings {
   recieve_email_notifications: Boolean!
 }
 
+"""Schema for the Lease document"""
+type Lease {
+  _id: String!
+  external_occupant: Boolean!
+  occupant_doc: Student
+  occupant_id: String
+  ownership_id: String!
+  price_per_month: Float!
+  priority: LeasePriority
+}
+
+"""A collection of leases"""
+type LeaseCollection {
+  leases: [Lease!]!
+}
+
+"""API Response class for Lease collection object"""
+type LeaseCollectionAPIResponse {
+  data: LeaseCollection
+  error: String
+  success: Boolean!
+}
+
+"""Object model for the priority object for a lease"""
+type LeasePriority {
+  end_date: String!
+  level: Int!
+  start_date: String!
+}
+
 type Mutation {
   addImagesToProperty(property_id: String!, s3_keys: [String!]!): PropertyAPIResponse!
   addOwnershipConfirmationActivity(date_submitted: String!, message: String!, ownership_id: String!, user_id: String!, user_type: String!): OwnershipAPIResponse!
@@ -283,6 +313,7 @@ type Query {
   getFeedback(limit: Float!, offset: Float!): FeedbackCollectionAPIResponse!
   getInstitution(_id: String!): InstitutionAPIResponse!
   getLandlord(_id: String!): LandlordAPIResponse!
+  getLeasesAndOccupants(ownership_id: String!): LeaseCollectionAPIResponse!
   getMatchingInstitutions(partial_name: String!): InstitutionListAPIResponse!
   getOwnership(_id: String!): OwnershipAPIResponse!
   getOwnershipConflicts(ownership_id: String!): OwnershipCollectionAPIResponse!

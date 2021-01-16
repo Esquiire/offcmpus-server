@@ -3,9 +3,11 @@ import {DocumentType} from '@typegoose/typegoose'
 import {Lease, LeaseModel, 
     LeaseCollectionAPIResponse, LeaseAPIResponse} from '../entities/Lease'
 import {Ownership, OwnershipModel} from '../entities/Ownership'
-import mongoose from 'mongoose'
+import {Student, StudentModel} from '../entities/Student'
+import mongoose, {DocumentQuery} from 'mongoose'
 
 const ObjectId = mongoose.Types.ObjectId
+type StudentQuery = DocumentQuery<DocumentType<Student> | null, DocumentType<Student>, {}>
 
 @Resolver()
 export class LeaseResolver {
@@ -26,6 +28,23 @@ export class LeaseResolver {
             }
         }
         let leases: DocumentType<Lease>[] = await LeaseModel.find({ownership_id}) as DocumentType<Lease>[]
+        let occupants: ([number, StudentQuery])[] = [];
+
+        // initialize each of the qeury searches asynchronously
+        for (let i = 0; i < leases.length; ++i) {
+            // if the lease has no occupant data or has an external occupant, pass a null promise resolver
+            if (leases[i].occupant_id == undefined || leases[i].external_occupant)
+                continue;
+            occupants.push([i, StudentModel.findById(leases[i].occupant_id) ]);
+        }
+
+        // wait for all of the queries to resolve
+        for (let i = 0; i < occupants.length; ++i) {
+
+            let student: DocumentType<Student> = await occupants[i][1] as DocumentType<Student>;
+            leases[ occupants[i][0] ].occupant_doc = student;
+        }
+
         return {
             success: true,
             data: {
