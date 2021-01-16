@@ -58,7 +58,18 @@ export class Lease {
     priority?: LeasePriority;
 }
 
+@ObjectType({description: "A collection of leases"})
+class LeaseCollection {
+
+    @Field(type => [Lease])
+    @prop({type: [Lease]})
+    leases: Lease[];
+}
+
 @ObjectType({description: "API Response class for the Lease object."})
 export class LeaseAPIResponse extends APIResult(Lease) {}
+
+@ObjectType({description: "API Response class for Lease collection object"})
+export class LeaseCollectionAPIResponse extends APIResult(LeaseCollection) {}
 
 export const LeaseModel = getModelForClass(Lease)
