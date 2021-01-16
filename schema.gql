@@ -162,6 +162,16 @@ type LeasePriority {
   start_date: String!
 }
 
+"""Input for describing the creation of a lease"""
+input LeaseUpdateInput {
+  external_occupant: Boolean
+  lease_id: String!
+  lease_priority: Int
+  price_per_month: Float
+  priority_end_date: String
+  priority_start_date: String
+}
+
 type Mutation {
   addImagesToProperty(property_id: String!, s3_keys: [String!]!): PropertyAPIResponse!
   addOwnershipConfirmationActivity(date_submitted: String!, message: String!, ownership_id: String!, user_id: String!, user_type: String!): OwnershipAPIResponse!
@@ -176,6 +186,7 @@ type Mutation {
   removePropertyFromStudentCollection(property_id: String!, student_id: String!): PropertyCollectionEntriesAPIResponse!
   setLandlordOnboarded(landlord_id: String!): LandlordAPIResponse!
   submitFeedback(message: String!, submitter_id: String!, tags: [String!]!, user_type: String!): FeedbackAPIResponse!
+  updateLeases(leases_info: [LeaseUpdateInput!]!, ownership_id: String!): LeaseCollectionAPIResponse!
   updatePhoneNumber(landlord_id: String!, phone_number: String!): LandlordAPIResponse!
   updatePropertyDetails(bathrooms: Int, description: String, furnished: Boolean, has_ac: Boolean, has_heater: Boolean, has_washer: Boolean, property_id: String!, rooms: Int, sq_ft: Int): PropertyAPIResponse!
   updateStudent(_id: String!, new_student: StudentInput!): StudentAPIResponse!

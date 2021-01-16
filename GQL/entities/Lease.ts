@@ -1,10 +1,10 @@
 import { prop, getModelForClass } from "@typegoose/typegoose"
-import { Field, ObjectType, ID, Int, Float } from "type-graphql"
+import { Field, ObjectType, InputType, ID, Int, Float } from "type-graphql"
 import { Student } from './Student'
 import {APIResult} from "."
 
 @ObjectType({description: "Object model for the priority object for a lease"})
-class LeasePriority {
+export class LeasePriority {
     
     // The priority level for this priority object.
     @Field(type => Int)
@@ -43,7 +43,7 @@ export class Lease {
     // The id for the student occupying this lease
     @Field(() => String, {nullable: true})
     @prop({type: String})
-    occupant_id: string;
+    occupant_id?: string;
 
     // Field to store the occupant document that corresponds to 
     // the student with occupant_id
@@ -80,3 +80,34 @@ export class LeaseAPIResponse extends APIResult(Lease) {}
 export class LeaseCollectionAPIResponse extends APIResult(LeaseCollection) {}
 
 export const LeaseModel = getModelForClass(Lease)
+
+// Input Types
+@InputType({description: "Input for describing the creation of a lease"})
+export class LeaseUpdateInput {
+
+    @Field(() => String)
+    @prop({type: String})
+    lease_id: string;
+
+    @Field(() => Float, {nullable: true})
+    @prop({type: Number})
+    price_per_month?: number;
+
+    @Field(() => Boolean, {nullable: true})
+    @prop({type: Boolean})
+    external_occupant?: boolean;
+
+
+    // Input fields for describing the lease priority information
+    @Field(() => Int, {nullable: true})
+    @prop({type: Number})
+    lease_priority?: number;
+
+    @Field(() => String, {nullable: true})
+    @prop({type: String})
+    priority_start_date?: string;
+
+    @Field(() => String, {nullable: true})
+    @prop({type: String})
+    priority_end_date?: string;
+}
