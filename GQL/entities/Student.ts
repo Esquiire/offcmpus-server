@@ -4,7 +4,6 @@ import {PushSubscription} from './Landlord'
 import {APIResult} from "."
 import {Property} from './Property'
 import {ObjectId} from 'mongodb'
-import mongoose from 'mongoose'
 
 /**
  * SearchStatus
