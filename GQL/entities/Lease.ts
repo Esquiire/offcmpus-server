@@ -29,6 +29,10 @@ export class Lease {
     @prop({type: String})
     _id: string;
 
+    @Field(() => Boolean)
+    @prop({type: Boolean})
+    active: boolean;
+
     // The id to the ownership document that this lease
     // is created for.
     @Field(() => String)
@@ -65,6 +69,23 @@ export class Lease {
     priority?: LeasePriority;
 }
 
+/**
+ * Create an empty lease that is for the ownership id with the
+ * provided ownership_id document
+ * @param ownership_id The id of the ownership document to create
+ * the lease document for
+ */
+export const createEmptyLease = ({for_ownership_id}: {for_ownership_id: string}): Lease => {
+    let lease_: Lease = new Lease();
+    lease_.ownership_id = for_ownership_id;
+    // leases are inactive by default. The landlord must
+    // activate them.
+    lease_.active = false;
+    lease_.external_occupant = false;
+    lease_.price_per_month = 0;
+    return lease_;
+}
+
 @ObjectType({description: "A collection of leases"})
 class LeaseCollection {
 
@@ -97,6 +118,9 @@ export class LeaseUpdateInput {
     @prop({type: Boolean})
     external_occupant?: boolean;
 
+    @Field(() => Boolean, {nullable: true})
+    @prop({type: Boolean})
+    active?: boolean;
 
     // Input fields for describing the lease priority information
     @Field(() => Int, {nullable: true})

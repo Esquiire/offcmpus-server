@@ -119,8 +119,6 @@ authRouter.get("/rpi/cas-auth", (req, res, next) => {
     }
     else {
       req.logIn(user, (login_err) => {
-
-
         if (login_err) return next(login_err);
         else {
           res.set('Content-Type', 'text/html');
@@ -140,13 +138,9 @@ authRouter.get("/rpi/cas-auth", (req, res, next) => {
       })
     }
   })(req, res, next)
-
 });
 
 authRouter.get("/user", (req, res) => {
-
-  console.log(req.headers);
-
   res.json({
     user: req.user,
     authenticated: req.isAuthenticated()

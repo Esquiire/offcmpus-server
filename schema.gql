@@ -135,6 +135,7 @@ type LandlordUserSettings {
 """Schema for the Lease document"""
 type Lease {
   _id: String!
+  active: Boolean!
   external_occupant: Boolean!
   occupant_doc: Student
   occupant_id: String
@@ -164,6 +165,7 @@ type LeasePriority {
 
 """Input for describing the creation of a lease"""
 input LeaseUpdateInput {
+  active: Boolean
   external_occupant: Boolean
   lease_id: String!
   lease_priority: Int
@@ -186,11 +188,11 @@ type Mutation {
   removePropertyFromStudentCollection(property_id: String!, student_id: String!): PropertyCollectionEntriesAPIResponse!
   setLandlordOnboarded(landlord_id: String!): LandlordAPIResponse!
   submitFeedback(message: String!, submitter_id: String!, tags: [String!]!, user_type: String!): FeedbackAPIResponse!
-  updateLeases(leases_info: [LeaseUpdateInput!]!, ownership_id: String!): LeaseCollectionAPIResponse!
   updatePhoneNumber(landlord_id: String!, phone_number: String!): LandlordAPIResponse!
   updatePropertyDetails(bathrooms: Int, description: String, furnished: Boolean, has_ac: Boolean, has_heater: Boolean, has_washer: Boolean, property_id: String!, rooms: Int, sq_ft: Int): PropertyAPIResponse!
   updateStudent(_id: String!, new_student: StudentInput!): StudentAPIResponse!
   updateStudentSearchStatus(id: String!, price_end: Float, price_start: Float, search_end: String, search_start: String, searching: Boolean!): StudentAPIResponse!
+  updateUnoccupiedLeases(leases_info: [LeaseUpdateInput!]!, ownership_id: String!): LeaseCollectionAPIResponse!
 }
 
 """Property Ownership Document Information"""

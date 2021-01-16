@@ -105,6 +105,10 @@ export class LeaseResolver {
 
                         modified_ = true;
                     }
+                    if (lease_update_info.active != undefined) {
+                        lease_.active = lease_update_info.active;
+                        modified_ = true;
+                    }
                 }
 
                 // save and update modified
