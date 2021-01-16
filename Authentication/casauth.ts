@@ -1,6 +1,6 @@
 import passport from 'passport'
 import chalk from 'chalk'
-import {StudentModel, Student} from '../GQL/entities/Student'
+import {StudentModel, Student, initializeStudentSearchStatus} from '../GQL/entities/Student'
 import {Institution, InstitutionModel} from '../GQL/entities/Institution'
 import {LandlordModel} from '../GQL/entities/Landlord'
 import {DocumentType} from "@typegoose/typegoose"
@@ -83,9 +83,10 @@ function(profile: any, done: Function) {
                 institution_id: institution_doc._id,
               }
             })
+            initializeStudentSearchStatus(new_student);
 
-            let added_student = await new_student.save()
-            done(null, added_student.toObject(), { new: true })
+            let added_student: DocumentType<Student> = await new_student.save() as DocumentType<Student>;
+            done(null, added_student.toObject(), { new: true });
       
           }
           else {
@@ -109,6 +110,8 @@ authRouter.get("/rpi/cas-auth", (req, res, next) => {
   res.header('Access-Control-Allow-Credentials', "true");
   passport.authenticate('cas', (err, user, info) => {
 
+    console.log(`In Passport CAS Authenticate.`);
+
     if (err) {
       console.log(`An error occurred ...`)
       console.log(err);
@@ -117,10 +120,9 @@ authRouter.get("/rpi/cas-auth", (req, res, next) => {
     else {
       req.logIn(user, (login_err) => {
 
+
         if (login_err) return next(login_err);
         else {
-          // res.redirect(`http://${process.env.FRONTEND_IP}:3000/student/register/complete`)
-
           res.set('Content-Type', 'text/html');
           res.send(Buffer.from(`
           <!DOCTYPE html>
@@ -134,7 +136,6 @@ authRouter.get("/rpi/cas-auth", (req, res, next) => {
           </body>
           `));
         }
-        // else res.redirect(`http://localhost:3000/`)
 
       })
     }
@@ -143,6 +144,9 @@ authRouter.get("/rpi/cas-auth", (req, res, next) => {
 });
 
 authRouter.get("/user", (req, res) => {
+
+  console.log(req.headers);
+
   res.json({
     user: req.user,
     authenticated: req.isAuthenticated()

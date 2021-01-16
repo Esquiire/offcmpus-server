@@ -160,7 +160,7 @@ const connectMongo = () =>
         if (err) {
           rej(err);
         } else {
-          res();
+          res(undefined);
         }
       }
     )
@@ -171,6 +171,7 @@ import smsRouter from './routers/twilio_smsVerify'
 app.use('/vendor/twilio', smsRouter)
 
 import "reflect-metadata"
+import { execute, subscribe } from 'graphql';
 import { ApolloServer } from "apollo-server-express"
 import { buildSchema } from "type-graphql";
 import * as http from "http";
@@ -183,6 +184,7 @@ import {StudentResolver,
 import { ObjectIdScalar } from "./GQL/entities";
 import {ObjectId} from 'mongodb'
 import webpush from 'web-push';
+import {SubscriptionServer} from 'subscriptions-transport-ws';
 
 const StartServer = async (): Promise<{
   server: http.Server;
@@ -221,6 +223,7 @@ const StartServer = async (): Promise<{
 
   const server = app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
+    
     new SubscriptionServer({
       execute,
       subscribe,
@@ -235,5 +238,6 @@ const StartServer = async (): Promise<{
 };
 
 const server = StartServer();
+
 
 export { app, connectMongo, server, MONGO_URI };

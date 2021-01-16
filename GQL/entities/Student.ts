@@ -6,6 +6,59 @@ import {Property} from './Property'
 import {ObjectId} from 'mongodb'
 import mongoose from 'mongoose'
 
+/**
+ * SearchStatus
+ * @desc describes the status of whether a student
+ * is looking for a property or not. And if so, for
+ * which time period.
+ */
+@ObjectType({description: "Status of student search"})
+export class SearchStatus {
+
+  // @prop -> date_updated: The ISO string of the last date the status was updated
+  @Field(type => String)
+  @prop({type: String})
+  date_updated: string;
+
+  // @prop -> searching: If true, the student is searching for a propety
+  @Field(type => Boolean)
+  @prop({type: Boolean})
+  searching: boolean;
+
+  // prop -> search_start: The start date the student is searching for, if searching is true
+  @Field(type => String, {nullable: true})
+  @prop({type: String})
+  search_start?: string;
+
+  // prop -> search_end: The end date the student is searching for, if searching is true
+  @Field(type => String, {nullable: true})
+  @prop({type: String})
+  search_end?: string;
+
+  // prop -> price_start: The start price for lease
+  @Field(type => Number, {nullable: true})
+  @prop({type: Number})
+  price_start?: number;
+
+  // prop -> price_end: The end price for lease
+  @Field(type => Number, {nullable: true})
+  @prop({type: Number})
+  price_end?: number;
+}
+/** 
+ * Modify the student object to provide default values
+ * for the student's search status properties.
+*/
+export const initializeStudentSearchStatus = (student: Student) => {
+  student.search_status = new SearchStatus();
+  student.search_status.date_updated = new Date().toISOString();
+  student.search_status.searching = false;
+}
+
+/**
+ * StudentUserSettings
+ * @desc describes the settings object for a student
+ */
 @ObjectType({description: "Student User Settinhs"})
 export class StudentUserSettings {
   @Field(type => Boolean)
@@ -16,6 +69,7 @@ export class StudentUserSettings {
   @prop({type: [PushSubscription]})
   push_subscriptions: PushSubscription[];
 }
+
 export const initializeStudentSettings = (student: Student) => {
   if (student.user_settings) return;
   student.user_settings = new StudentUserSettings();
@@ -25,6 +79,11 @@ export const initializeStudentSettings = (student: Student) => {
   }
 }
 
+/**
+ * CasAuthInfo
+ * @desc describes the CAS authentication information
+ * for a student logging in through CAS auth 3.0 system.
+ */
 @ObjectType({description: "Cas Auth Information"})
 class CasAuthInfo {
   @Field(type => String, { nullable: true })
@@ -43,6 +102,11 @@ export class PropertyCollectionEntries{
   collection_entries: Partial<Property>[];
 }
 
+/**
+ * Student
+ * @desc The student object that describes a student
+ * user.
+ */
 @ObjectType({description: "Student model"})
 export class Student {
   @Field(() => ID)
@@ -87,6 +151,10 @@ export class Student {
   @Field(type => StudentUserSettings, {nullable: true})
   @prop({type: StudentUserSettings})
   user_settings?: StudentUserSettings;
+
+  @Field(type => SearchStatus, {nullable: true})
+  @prop({type: SearchStatus})
+  search_status?: SearchStatus;
 }
 
 @InputType()
