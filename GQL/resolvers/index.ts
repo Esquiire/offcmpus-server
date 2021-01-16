@@ -4,5 +4,6 @@ import {PropertyResolver} from './PropertyResolver'
 import {InstitutionResolver} from './InstitutionResolver'
 import {OwnershipResolver} from './OwnershipResolver'
 import {FeedbackResolver} from './FeedbackResolver'
+import {LeaseResolver} from './LeaseResolver'
 
-export {LandlordResolver, FeedbackResolver, InstitutionResolver, OwnershipResolver, StudentResolver, PropertyResolver}
+export {LandlordResolver, LeaseResolver, FeedbackResolver, InstitutionResolver, OwnershipResolver, StudentResolver, PropertyResolver}

@@ -177,7 +177,8 @@ import {StudentResolver,
   OwnershipResolver, 
   LandlordResolver, 
   FeedbackResolver,
-  InstitutionResolver, 
+  InstitutionResolver,
+  LeaseResolver,
   PropertyResolver} from "./GQL/resolvers"
 import { ObjectIdScalar } from "./GQL/entities";
 import {ObjectId} from 'mongodb'
@@ -195,6 +196,7 @@ const StartServer = async (): Promise<{
       LandlordResolver, 
       InstitutionResolver, 
       PropertyResolver,
+      LeaseResolver,
       FeedbackResolver],
     emitSchemaFile: true,
     validate: true,
