@@ -352,3 +352,7 @@ type StudentUserSettings {
   push_subscriptions: [PushSubscription!]!
   recieve_email_notifications: Boolean!
 }
+
+type Subscription {
+  newFeedback: Feedback!
+}

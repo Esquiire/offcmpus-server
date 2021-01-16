@@ -105,7 +105,7 @@ import express from 'express'
 import {frontendPath} from '../config'
 const authRouter = express.Router()
 authRouter.get("/rpi/cas-auth", (req, res, next) => {
-  console.log(chalk.bgCyan(`👉 CAS Auth`))
+  console.log(chalk.bgCyan(`👉 CAS Auth`));
 
   res.header('Access-Control-Allow-Credentials', "true");
   passport.authenticate('cas', (err, user, info) => {
@@ -120,20 +120,21 @@ authRouter.get("/rpi/cas-auth", (req, res, next) => {
     else {
       req.logIn(user, (login_err) => {
 
-        console.log(`Logging in student:`);
-        console.log(`Login error? ${login_err}`);
 
-        if (login_err) {
-          console.log(`Condition 1`);
-          return next(login_err);
-        }
-        else if (info.new) {
-          console.log(`Condition 2`);
-          res.redirect(`http://${process.env.FRONTEND_IP}:3000/student/register/complete`)
-        }
+        if (login_err) return next(login_err);
         else {
-          console.log(`Condition 3`);
-          res.redirect(`http://localhost:3000/`)
+          res.set('Content-Type', 'text/html');
+          res.send(Buffer.from(`
+          <!DOCTYPE html>
+          <head></head>
+          <body>
+              <script type="text/javascript">
+                window.onload = () => {
+                  window.opener.postMessage({authSuccess: true}, "*");
+                }
+              </script>
+          </body>
+          `));
         }
 
       })

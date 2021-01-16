@@ -2,6 +2,9 @@ import express from "express";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import cors from "cors";
+import { execute, subscribe } from 'graphql';
+import { createServer } from 'http';
+import { SubscriptionServer } from 'subscriptions-transport-ws';
 const app = express();
 
 // load environment variablesd
@@ -220,16 +223,15 @@ const StartServer = async (): Promise<{
 
   const server = app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
-
+    
     new SubscriptionServer({
       execute,
       subscribe,
       schema,
     }, {
       server: server,
-      path: '/subscriptions',
+      path: '/graphql',
     });
-
   });
 
   return { server, apolloServer };
