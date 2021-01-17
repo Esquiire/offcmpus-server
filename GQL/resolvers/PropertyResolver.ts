@@ -268,11 +268,10 @@ export class PropertyResolver {
       // ownerhip document for this property.
       if (ownerships[0]) {
         let leases_: DocumentType<Lease>[] = await LeaseModel.find({ownership_id: ownerships[0]._id}) as DocumentType<Lease>[];
-        
+
         let leases_to_make = rooms - leases_.length;
         for (let i = 0; i < leases_to_make; ++i) {
-          let new_lease: DocumentType<Lease> = createEmptyLease({for_ownership_id: ownerships[0]._id}) as DocumentType<Lease>;
-          new_lease.save();
+          let new_lease: DocumentType<Lease> = await createEmptyLease({for_ownership_id: ownerships[0]._id});
         }
 
         // Restrict the reducing of the number of rooms...

@@ -2,6 +2,8 @@ import { prop, getModelForClass } from "@typegoose/typegoose"
 import { Field, ObjectType, InputType, ID, Int, Float } from "type-graphql"
 import { Student } from './Student'
 import {APIResult} from "."
+import { DocumentType } from "@typegoose/typegoose"
+import mongoose from 'mongoose'
 
 @ObjectType({description: "Object model for the priority object for a lease"})
 export class LeasePriority {
@@ -25,8 +27,7 @@ export class LeasePriority {
 @ObjectType({description: "Schema for the Lease document"})
 export class Lease {
 
-    @Field(() => String)
-    @prop({type: String})
+    @Field(() => ID)
     _id: string;
 
     @Field(() => Boolean)
@@ -67,23 +68,6 @@ export class Lease {
     @Field(() => LeasePriority, {nullable: true})
     @prop({type: LeasePriority})
     priority?: LeasePriority;
-}
-
-/**
- * Create an empty lease that is for the ownership id with the
- * provided ownership_id document
- * @param ownership_id The id of the ownership document to create
- * the lease document for
- */
-export const createEmptyLease = ({for_ownership_id}: {for_ownership_id: string}): Lease => {
-    let lease_: Lease = new Lease();
-    lease_.ownership_id = for_ownership_id;
-    // leases are inactive by default. The landlord must
-    // activate them.
-    lease_.active = false;
-    lease_.external_occupant = false;
-    lease_.price_per_month = 0;
-    return lease_;
 }
 
 @ObjectType({description: "A collection of leases"})
@@ -134,4 +118,23 @@ export class LeaseUpdateInput {
     @Field(() => String, {nullable: true})
     @prop({type: String})
     priority_end_date?: string;
+}
+
+/**
+ * Create an empty lease that is for the ownership id with the
+ * provided ownership_id document
+ * @param ownership_id The id of the ownership document to create
+ * the lease document for
+ */
+export const createEmptyLease = async (
+    {for_ownership_id}: {for_ownership_id: string}): Promise<DocumentType<Lease>> => {
+
+    let lease_ = new LeaseModel();
+    lease_.ownership_id = for_ownership_id;
+    // leases are inactive by default. The landlord must
+    // activate them.
+    lease_.active = false;
+    lease_.external_occupant = false;
+    lease_.price_per_month = 0;
+    return lease_.save() as Promise<DocumentType<Lease>>;
 }

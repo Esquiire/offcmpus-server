@@ -24,6 +24,40 @@ const ObjectId = mongoose.Types.ObjectId
 export class OwnershipResolver {
 
   /**
+   * Find the ownership document that is confirmed for the property with the
+   * provided property id.
+   */
+  @Query(() => OwnershipAPIResponse)
+  async getOwnershipForProperty(
+    @Arg("property_id") property_id: string,
+    @Arg("landlord_id") landlord_id: string): Promise<OwnershipAPIResponse> {
+
+      if (!ObjectId.isValid(property_id)) {
+        return { success: false, error: "Invalid property id" }
+      }
+
+      let ownership: DocumentType<Ownership>[] = await OwnershipModel.find({
+        property_id, status: "confirmed"
+      }) as DocumentType<Ownership>[];
+
+      if (ownership.length == 0) {
+        return { success: false, error: "No valid ownership for property found" }
+      }
+      if (ownership.length != 1) {
+        return { success: false, error: "Conflict with ownership of property" }
+      }
+
+      if (ownership[0].landlord_id != landlord_id) {
+        return { success: false, error: "Landlord does not own this property" }
+      }
+      
+      return {
+        success: true,
+        data: ownership[0]
+      }
+    }
+
+  /**
    * getOwnership(_id)
    * @param _id: string => The id for the ownership document we want
    * 

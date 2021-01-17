@@ -134,7 +134,7 @@ type LandlordUserSettings {
 
 """Schema for the Lease document"""
 type Lease {
-  _id: String!
+  _id: ID!
   active: Boolean!
   external_occupant: Boolean!
   occupant_doc: Student
@@ -330,6 +330,7 @@ type Query {
   getMatchingInstitutions(partial_name: String!): InstitutionListAPIResponse!
   getOwnership(_id: String!): OwnershipAPIResponse!
   getOwnershipConflicts(ownership_id: String!): OwnershipCollectionAPIResponse!
+  getOwnershipForProperty(landlord_id: String!, property_id: String!): OwnershipAPIResponse!
   getOwnershipsForLandlord(landlord_id: String!, with_landlord: Boolean, with_properties: Boolean): OwnershipCollectionAPIResponse!
   getOwnershipsInReview: OwnershipCollectionAPIResponse!
   getPropertiesForLandlord(landlord_id: String!, status: String): PropertyListAPIResponse!
