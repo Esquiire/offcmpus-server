@@ -50,7 +50,7 @@ export class SearchStatus {
 */
 export const initializeStudentSearchStatus = (student: Student) => {
   student.search_status = new SearchStatus();
-  student.search_status.date_updated = new Date().toISOString();
+  student.search_status.date_updated = new Date(0).toISOString();
   student.search_status.searching = false;
 }
 

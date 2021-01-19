@@ -21,13 +21,19 @@ export class LeaseResolver {
     async getLeasesAndOccupants 
     (@Arg("ownership_id") ownership_id: string): Promise<LeaseCollectionAPIResponse> {
         
+        console.log(`Querying Leases for ownership: ${ownership_id}`);
+
         if (!ObjectId.isValid(ownership_id)) {
+            console.log(`Ownership id is invalid...`)
             return {
                 success: false,
                 error: "Invalid ownership id provided"
             }
         }
         let leases: DocumentType<Lease>[] = await LeaseModel.find({ownership_id}) as DocumentType<Lease>[]
+        console.log("Lease Documents.")
+        console.log(leases)
+
         let occupants: ([number, Query_<Student>])[] = [];
 
         // initialize each of the qeury searches asynchronously

@@ -151,6 +151,9 @@ export class OwnershipResolver {
   {
 
     console.log(chalk.bgBlue(`👉 getOwnershipsForLandlord()`))
+    console.log(`\tlandlord_id: ${landlord_id}`)
+    console.log(`\twith_properties: ${with_properties}`);
+    console.log(`\twith_landlord: ${with_landlord}`)
     if (!ObjectId.isValid(landlord_id)) {
       console.log(chalk.bgRed(`❌ Error: Landlord id provided is not a valid object id`))
       return {
@@ -185,6 +188,8 @@ export class OwnershipResolver {
       for (let i = 0; i < ownerships.length; ++i) ownerships[i].landlord_doc = landlord_;
     }
 
+    console.log(`Ownerships`);
+    console.log(ownerships);
     console.log(chalk.bgGreen(`✔ Successfully retrieved ${ownerships.length} ownership documents for landlord with id ${landlord_id}`))
     return {
       success: true,
