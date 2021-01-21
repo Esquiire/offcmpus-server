@@ -178,6 +178,7 @@ import {StudentResolver,
   LandlordResolver, 
   FeedbackResolver,
   InstitutionResolver,
+  LeaseDocumentResolver,
   LeaseResolver,
   PropertyResolver} from "./GQL/resolvers"
 import { ObjectIdScalar } from "./GQL/entities";
@@ -196,6 +197,7 @@ const StartServer = async (): Promise<{
       LandlordResolver, 
       InstitutionResolver, 
       PropertyResolver,
+      LeaseDocumentResolver,
       LeaseResolver,
       FeedbackResolver],
     emitSchemaFile: true,

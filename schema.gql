@@ -156,6 +156,21 @@ type LeaseCollectionAPIResponse {
   success: Boolean!
 }
 
+"""Lease Document Schema"""
+type LeaseDocument {
+  _id: ID!
+  documents: [S3Document!]!
+  landlord_id: String!
+  lease_name: String!
+}
+
+"""API Response class for Lease Document"""
+type LeaseDocumentAPIResponse {
+  data: LeaseDocument
+  error: String
+  success: Boolean!
+}
+
 """Object model for the priority object for a lease"""
 type LeasePriority {
   end_date: String!
@@ -176,6 +191,7 @@ input LeaseUpdateInput {
 
 type Mutation {
   addImagesToProperty(property_id: String!, s3_keys: [String!]!): PropertyAPIResponse!
+  addNewLeaseDocument(document_keys: [String!]!, landlord_id: String!, lease_name: String!): LeaseDocumentAPIResponse!
   addOwnershipConfirmationActivity(date_submitted: String!, message: String!, ownership_id: String!, user_id: String!, user_type: String!): OwnershipAPIResponse!
   addOwnershipDocuments(documents_info: [OwnershipDocumentInput!]!, ownership_id: String!): OwnershipAPIResponse!
   addPropertyToStudentCollection(property_id: String!, student_id: String!): PropertyCollectionEntriesAPIResponse!
@@ -341,6 +357,11 @@ type Query {
   resendEamilConfirmation(landlord_id: String!): LandlordAPIResponse!
   searchProperties(searchOptions: PropertySearchInput!): PropertyListAPIResponse!
   verifyAddress(address_1: String!, address_2: String!, city: String!, state: String!, zip: String!): AddressVerificationAPIResponse!
+}
+
+type S3Document {
+  mime_type: String!
+  s3_key: String!
 }
 
 """Status of student search"""
