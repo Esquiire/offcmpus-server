@@ -189,6 +189,18 @@ input LeaseUpdateInput {
   priority_start_date: String
 }
 
+"""Multiple lease documents"""
+type MultipleLeaseDocuments {
+  lease_documents: [LeaseDocument!]!
+}
+
+"""Multiple lease documents response"""
+type MultipleLeaseDocumentsAPIResponse {
+  data: MultipleLeaseDocuments
+  error: String
+  success: Boolean!
+}
+
 type Mutation {
   addImagesToProperty(property_id: String!, s3_keys: [String!]!): PropertyAPIResponse!
   addNewLeaseDocument(document_keys: [String!]!, landlord_id: String!, lease_name: String!): LeaseDocumentAPIResponse!
@@ -342,6 +354,7 @@ type Query {
   getFeedback(limit: Float!, offset: Float!): FeedbackCollectionAPIResponse!
   getInstitution(_id: String!): InstitutionAPIResponse!
   getLandlord(_id: String!): LandlordAPIResponse!
+  getLeaseDocumentsForLandlord(landlord_id: String!): MultipleLeaseDocumentsAPIResponse!
   getLeasesAndOccupants(ownership_id: String!): LeaseCollectionAPIResponse!
   getMatchingInstitutions(partial_name: String!): InstitutionListAPIResponse!
   getOwnership(_id: String!): OwnershipAPIResponse!
