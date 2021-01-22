@@ -58,6 +58,7 @@
     "reflect-metadata": "^0.1.13",
     "resize-image-buffer": "^1.0.0",
     "ssri": ">=5.2.2",
+    "stripe": "^8.132.0",
     "subscriptions-transport-ws": "^0.9.18",
     "twilio": "^3.53.0",
     "type-graphql": "^1.1.1",

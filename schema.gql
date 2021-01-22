@@ -132,8 +132,89 @@ type LandlordUserSettings {
   recieve_email_notifications: Boolean!
 }
 
+"""Schema for the Lease document"""
+type Lease {
+  _id: ID!
+  active: Boolean!
+  external_occupant: Boolean!
+  lease_availability_end_date: String
+  lease_availability_start_date: String
+  lease_document_id: String
+  occupant_doc: Student
+  occupant_id: String
+  ownership_id: String!
+  price_per_month: Float!
+  priority: LeasePriority
+}
+
+"""API Response class for the Lease object."""
+type LeaseAPIResponse {
+  data: Lease
+  error: String
+  success: Boolean!
+}
+
+"""A collection of leases"""
+type LeaseCollection {
+  leases: [Lease!]!
+}
+
+"""API Response class for Lease collection object"""
+type LeaseCollectionAPIResponse {
+  data: LeaseCollection
+  error: String
+  success: Boolean!
+}
+
+"""Lease Document Schema"""
+type LeaseDocument {
+  _id: ID!
+  documents: [S3Document!]!
+  landlord_id: String!
+  lease_name: String!
+}
+
+"""API Response class for Lease Document"""
+type LeaseDocumentAPIResponse {
+  data: LeaseDocument
+  error: String
+  success: Boolean!
+}
+
+"""Object model for the priority object for a lease"""
+type LeasePriority {
+  end_date: String!
+  level: Int!
+  start_date: String!
+}
+
+"""Input for describing the creation of a lease"""
+input LeaseUpdateInput {
+  active: Boolean
+  external_occupant: Boolean
+  lease_id: String!
+  lease_priority: Int
+  price_per_month: Float
+  priority_end_date: String
+  priority_start_date: String
+}
+
+"""Multiple lease documents"""
+type MultipleLeaseDocuments {
+  lease_documents: [LeaseDocument!]!
+}
+
+"""Multiple lease documents response"""
+type MultipleLeaseDocumentsAPIResponse {
+  data: MultipleLeaseDocuments
+  error: String
+  success: Boolean!
+}
+
 type Mutation {
+  activateLease(lease_document_id: String!, lease_end_date: String!, lease_id: String!, lease_start_date: String!, price_per_month: Float!): LeaseAPIResponse!
   addImagesToProperty(property_id: String!, s3_keys: [String!]!): PropertyAPIResponse!
+  addNewLeaseDocument(document_keys: [String!]!, document_mimes: [String!]!, landlord_id: String!, lease_name: String!): LeaseDocumentAPIResponse!
   addOwnershipConfirmationActivity(date_submitted: String!, message: String!, ownership_id: String!, user_id: String!, user_type: String!): OwnershipAPIResponse!
   addOwnershipDocuments(documents_info: [OwnershipDocumentInput!]!, ownership_id: String!): OwnershipAPIResponse!
   addPropertyToStudentCollection(property_id: String!, student_id: String!): PropertyCollectionEntriesAPIResponse!
@@ -150,6 +231,7 @@ type Mutation {
   updatePropertyDetails(bathrooms: Int, description: String, furnished: Boolean, has_ac: Boolean, has_heater: Boolean, has_washer: Boolean, property_id: String!, rooms: Int, sq_ft: Int): PropertyAPIResponse!
   updateStudent(_id: String!, new_student: StudentInput!): StudentAPIResponse!
   updateStudentSearchStatus(id: String!, price_end: Float, price_start: Float, search_end: String, search_start: String, searching: Boolean!): StudentAPIResponse!
+  updateUnoccupiedLeases(leases_info: [LeaseUpdateInput!]!, ownership_id: String!): LeaseCollectionAPIResponse!
 }
 
 """Property Ownership Document Information"""
@@ -283,9 +365,12 @@ type Query {
   getFeedback(limit: Float!, offset: Float!): FeedbackCollectionAPIResponse!
   getInstitution(_id: String!): InstitutionAPIResponse!
   getLandlord(_id: String!): LandlordAPIResponse!
+  getLeaseDocumentsForLandlord(landlord_id: String!): MultipleLeaseDocumentsAPIResponse!
+  getLeasesAndOccupants(ownership_id: String!): LeaseCollectionAPIResponse!
   getMatchingInstitutions(partial_name: String!): InstitutionListAPIResponse!
   getOwnership(_id: String!): OwnershipAPIResponse!
   getOwnershipConflicts(ownership_id: String!): OwnershipCollectionAPIResponse!
+  getOwnershipForProperty(landlord_id: String!, property_id: String!): OwnershipAPIResponse!
   getOwnershipsForLandlord(landlord_id: String!, with_landlord: Boolean, with_properties: Boolean): OwnershipCollectionAPIResponse!
   getOwnershipsInReview: OwnershipCollectionAPIResponse!
   getPropertiesForLandlord(landlord_id: String!, status: String): PropertyListAPIResponse!
@@ -296,6 +381,11 @@ type Query {
   resendEamilConfirmation(landlord_id: String!): LandlordAPIResponse!
   searchProperties(searchOptions: PropertySearchInput!): PropertyListAPIResponse!
   verifyAddress(address_1: String!, address_2: String!, city: String!, state: String!, zip: String!): AddressVerificationAPIResponse!
+}
+
+type S3Document {
+  mime_type: String!
+  s3_key: String!
 }
 
 """Status of student search"""

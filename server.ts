@@ -61,6 +61,10 @@ app.use(passport.session());
 app.use("/auth", CasAuthRouter);
 app.use("/auth", LocalAuthRouter);
 
+// Stripe Payment Endpoint Processing
+import stripeRouter from './vendors/Stripe'
+app.use("/payments", stripeRouter);
+
 import {NotificationsAPI} from './modules/NotificationsAPI'
 import {StudentModel, Student} from './GQL/entities/Student'
 import {LandlordModel, Landlord} from './GQL/entities/Landlord'
@@ -177,7 +181,9 @@ import {StudentResolver,
   OwnershipResolver, 
   LandlordResolver, 
   FeedbackResolver,
-  InstitutionResolver, 
+  InstitutionResolver,
+  LeaseDocumentResolver,
+  LeaseResolver,
   PropertyResolver} from "./GQL/resolvers"
 import { ObjectIdScalar } from "./GQL/entities";
 import {ObjectId} from 'mongodb'
@@ -195,6 +201,8 @@ const StartServer = async (): Promise<{
       LandlordResolver, 
       InstitutionResolver, 
       PropertyResolver,
+      LeaseDocumentResolver,
+      LeaseResolver,
       FeedbackResolver],
     emitSchemaFile: true,
     validate: true,

@@ -4,7 +4,6 @@ import {PushSubscription} from './Landlord'
 import {APIResult} from "."
 import {Property} from './Property'
 import {ObjectId} from 'mongodb'
-import mongoose from 'mongoose'
 
 /**
  * SearchStatus
@@ -51,7 +50,7 @@ export class SearchStatus {
 */
 export const initializeStudentSearchStatus = (student: Student) => {
   student.search_status = new SearchStatus();
-  student.search_status.date_updated = new Date().toISOString();
+  student.search_status.date_updated = new Date(0).toISOString();
   student.search_status.searching = false;
 }
 
