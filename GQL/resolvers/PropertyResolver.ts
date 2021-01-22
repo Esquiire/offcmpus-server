@@ -145,6 +145,14 @@ export class PropertyResolver {
 
   }
 
+  @Query(() => PropertyListAPIResponse)
+  async searchForProperties(): Promise<PropertyListAPIResponse> 
+  {
+    return {
+      success: true
+    }
+  }
+
   /**
    * getPropertiesForLandlord()
    * @decs Get the list of properties that this landlord owns that
