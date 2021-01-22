@@ -30,6 +30,11 @@ export class Lease {
     @Field(() => ID)
     _id: string;
 
+    /**
+     * If active is true, then this lease is on the market / available
+     * for grabs.
+     * Otherwise, students should not be able to see this lease available.
+     */
     @Field(() => Boolean)
     @prop({type: Boolean})
     active: boolean;
@@ -68,6 +73,21 @@ export class Lease {
     @Field(() => LeasePriority, {nullable: true})
     @prop({type: LeasePriority})
     priority?: LeasePriority;
+
+    // The lease document files that identify what is allowed on this
+    // lease. This is the document that students will sign to accept 
+    // accept a lease.
+    @Field(() => String, {nullable: true})
+    @prop({type: String})
+    lease_document_id?: string;
+
+    @Field(() => String, {nullable: true})
+    @prop({type: String})
+    lease_availability_start_date?: string;
+
+    @Field(() => String, {nullable: true})
+    @prop({type: String})
+    lease_availability_end_date?: string;
 }
 
 @ObjectType({description: "A collection of leases"})

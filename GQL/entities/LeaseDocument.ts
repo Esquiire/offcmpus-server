@@ -4,7 +4,7 @@ import { ID } from "type-graphql"
 import { APIResult } from '.'
 
 @ObjectType()
-class S3Document {
+export class S3Document {
 
     // The mime of document. (e.g application/pdf, image/png, etc.)
     @Field(() => String)

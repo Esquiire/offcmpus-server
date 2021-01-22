@@ -54,6 +54,59 @@ export class LeaseResolver {
         return { success: true, data: {leases} }
     }
 
+    @Mutation(returns => LeaseAPIResponse)
+    async activateLease (
+
+        // the id of the lease we are activating
+        @Arg("lease_id") lease_id: string,
+
+        // The id of the document object that holds the file information
+        // for leases uploaded.
+        @Arg("lease_document_id") lease_document_id: string,
+
+        @Arg("price_per_month") price_per_month: number,
+        @Arg("lease_start_date") lease_start_date: string,
+        @Arg("lease_end_date") lease_end_date: string
+    ): Promise<LeaseAPIResponse>
+    {
+
+        if (!ObjectId.isValid(lease_id) || !ObjectId.isValid(lease_document_id)) {
+            return {
+                success: false,
+                error: "Invalid lease id."
+            }
+        }
+
+        let lease_: DocumentType<Lease> = await LeaseModel.findById(lease_id) as DocumentType<Lease>;
+        if (!lease_) {
+            return {
+                success: false,
+                error: "No lease found with the given id."
+            }
+        }
+
+        if (lease_.active == true) {
+            return {
+                success: false,
+                error: "Cannot reactive an already activated elase."
+            }
+        }
+
+        // activate the lease
+        lease_.active = true;
+        lease_.price_per_month = price_per_month;
+        lease_.lease_availability_start_date = lease_start_date;
+        lease_.lease_availability_end_date = lease_end_date;
+        lease_.lease_document_id = lease_document_id;
+
+        lease_.save ();
+
+        return {
+            success: true,
+            data: lease_
+        }
+    }
+
     /**
      * updateUnoccupiedLeases
      * @desc Update multiple lease documents that are for a specific ownership document. This mutator
