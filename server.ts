@@ -61,6 +61,10 @@ app.use(passport.session());
 app.use("/auth", CasAuthRouter);
 app.use("/auth", LocalAuthRouter);
 
+// Stripe Payment Endpoint Processing
+import stripeRouter from './vendors/Stripe'
+app.use("/payments", stripeRouter);
+
 import {NotificationsAPI} from './modules/NotificationsAPI'
 import {StudentModel, Student} from './GQL/entities/Student'
 import {LandlordModel, Landlord} from './GQL/entities/Landlord'
