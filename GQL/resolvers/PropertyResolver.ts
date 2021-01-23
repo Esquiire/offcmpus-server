@@ -146,8 +146,16 @@ export class PropertyResolver {
   }
 
   @Query(() => PropertyListAPIResponse)
-  async searchForProperties(): Promise<PropertyListAPIResponse> 
+  async searchForProperties(
+    @Arg("price_start") price_start: number,
+    @Arg("price_end") price_end: number,
+    @Arg("rooms") rooms: number,
+    @Arg("distance") distance: number
+  ): Promise<PropertyListAPIResponse> 
   {
+
+    
+
     return {
       success: true
     }

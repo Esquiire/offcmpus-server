@@ -1,5 +1,5 @@
 import { prop, getModelForClass } from "@typegoose/typegoose"
-import { Field, ObjectType, InputType, ID } from "type-graphql";
+import { Field, ObjectType, InputType, ID, Float } from "type-graphql";
 import {APIResult} from "."
 
 @ObjectType({description: "Institution Location"})
@@ -19,6 +19,14 @@ class InstitutionLocationInfo {
   @Field()
   @prop()
   zip: string;
+
+  @Field(() => Float)
+  @prop({type: Number})
+  longitude: number;
+
+  @Field(() => Float)
+  @prop({type: Number})
+  latitude: number;
 }
 
 @ObjectType({description: "Institution Model"})

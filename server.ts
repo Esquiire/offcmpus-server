@@ -65,6 +65,10 @@ app.use("/auth", LocalAuthRouter);
 import stripeRouter from './vendors/Stripe'
 app.use("/payments", stripeRouter);
 
+// Routing API Test
+import routingRouter from './modules/RoutingAPI';
+app.use('/routing', routingRouter);
+
 import {NotificationsAPI} from './modules/NotificationsAPI'
 import {StudentModel, Student} from './GQL/entities/Student'
 import {LandlordModel, Landlord} from './GQL/entities/Landlord'
