@@ -38,6 +38,12 @@ type ConfirmationActivity {
   user_type: String!
 }
 
+"""The directions coordinates information"""
+type DirectionCoordinates {
+  coordinates: [[Float!]!]!
+  distance: Float!
+}
+
 """Feedback submission entry"""
 type Feedback {
   date_submitted: String!
@@ -287,6 +293,7 @@ type Property {
   address_line_2: String
   city: String!
   details: PropertyDetails
+  directions: [PropertyDirections!]
   landlord: String!
   landlord_doc: Landlord
   state: String!
@@ -321,6 +328,14 @@ type PropertyDetails {
   property_images: [PropertyImageInfo!]!
   rooms: Int!
   sq_ft: Float!
+}
+
+"""Property directions to an institution"""
+type PropertyDirections {
+  cycling_regular_directions: [DirectionCoordinates!]
+  driving_car_directions: [DirectionCoordinates!]
+  foot_walking_directions: [DirectionCoordinates!]
+  institution_id: String!
 }
 
 """Property Image info"""

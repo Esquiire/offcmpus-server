@@ -5,6 +5,43 @@ import {APIResult} from "."
 
 import {Landlord} from './Landlord'
 
+@ObjectType({description: "The directions coordinates information"})
+export class DirectionCoordinates {
+
+  @Field(type => Number)
+  @prop({type: Number})
+  distance: number;
+
+  @Field(type => [[Number]])
+  @prop({type: [[Number]]})
+  coordinates: Number[][];
+}
+
+@ObjectType({description: "Property directions to an institution"})
+export class PropertyDirections {
+
+  /**
+   * The id of the institution that this directions object
+   * leads to, from the parent property location
+   */
+  @Field(() => String)
+  @prop({type: String})
+  institution_id: string;
+
+  @Field(() => [DirectionCoordinates], {nullable: true})
+  @prop({type: [DirectionCoordinates]})
+  foot_walking_directions?: DirectionCoordinates[];
+
+  @Field(() => [DirectionCoordinates], {nullable: true})
+  @prop({type: [DirectionCoordinates]})
+  driving_car_directions?: DirectionCoordinates[];
+
+  @Field(() => [DirectionCoordinates], {nullable: true})
+  @prop({type: [DirectionCoordinates]})
+  cycling_regular_directions?: DirectionCoordinates[];
+
+}
+
 @ObjectType({description: "Property Image info"})
 export class PropertyImageInfo {
   @Field(type => String)
@@ -92,6 +129,10 @@ export class Property {
   @Field(type => PropertyDetails, {nullable: true})
   @prop({type: PropertyDetails})
   details?: PropertyDetails;
+
+  @Field(type => [PropertyDirections], {nullable: true})
+  @prop({type: [PropertyDirections]})
+  directions?: PropertyDirections[];
 }
 
 export const getAddress = (property_: DocumentType<Property>): string => {
