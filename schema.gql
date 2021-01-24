@@ -296,6 +296,7 @@ type Property {
   directions: [PropertyDirections!]
   landlord: String!
   landlord_doc: Landlord
+  leases: [Lease!]
   state: String!
   zip: String!
 }
@@ -396,7 +397,7 @@ type Query {
   getStudent(_id: String!): StudentAPIResponse!
   getStudentSavedCollection(_id: String!, collectionOptions: CollectionFetchInput!): PropertyCollectionEntriesAPIResponse!
   resendEamilConfirmation(landlord_id: String!): LandlordAPIResponse!
-  searchForProperties(distance: Float!, price_end: Float!, price_start: Float!, rooms: Float!): PropertyListAPIResponse!
+  searchForProperties(distance: Float!, price_end: Float!, price_start: Float!, rooms: Int!): PropertyListAPIResponse!
   searchProperties(searchOptions: PropertySearchInput!): PropertyListAPIResponse!
   verifyAddress(address_1: String!, address_2: String!, city: String!, state: String!, zip: String!): AddressVerificationAPIResponse!
 }

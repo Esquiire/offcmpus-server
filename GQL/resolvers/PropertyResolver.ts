@@ -149,15 +149,118 @@ export class PropertyResolver {
   async searchForProperties(
     @Arg("price_start") price_start: number,
     @Arg("price_end") price_end: number,
-    @Arg("rooms") rooms: number,
+    @Arg("rooms", type => Int) rooms: number,
     @Arg("distance") distance: number
   ): Promise<PropertyListAPIResponse> 
   {
 
+    // TODO change placeholder query with actual search implementation
+    let all_active_leases: DocumentType<Lease>[] = await LeaseModel.find({
+      /**
+       * Find all of the leases such that they are:
+       * 1. on the market (active == true)
+       * 2. not currently occupied by anyone (occupant_id == undefined)
+       * 3. not externally opccupied (external_occupant == false)
+       */
+      
+      active: true,
+      occupant_id: { $exists: false },
+      external_occupant: false
+    }) as DocumentType<Lease>[];
+
+    // find all of the properties that are associated with
+    // the lease.
+    type LeaseOwnershipData = {
+      ownership_promise: Promise<Ownership | undefined>,
+      leases: Lease[]
+    };
+    let ownerships: {[key: string]: LeaseOwnershipData} = {};
     
+    all_active_leases.forEach((lease: DocumentType<Lease>) => {
+      if (!Object.prototype.hasOwnProperty.call(ownerships, lease.ownership_id)) {
+
+        let prom: Promise<Ownership | undefined> = new Promise((resolve, reject) => {
+          // find the ownership document for each of the leases that match.
+          OwnershipModel.findById(lease.ownership_id, 
+            (err: any, ownership_doc: DocumentType<Ownership> | null) => {
+              if (err || ownership_doc == null) resolve(undefined);
+              else resolve(ownership_doc);
+          });
+        });
+
+        let ownership_data: LeaseOwnershipData = {
+          ownership_promise: prom,
+          leases: [lease]
+        };
+
+        ownerships[lease.ownership_id] = ownership_data;
+      }
+      // add the lease into the correct array
+      else {
+        ownerships[lease.ownership_id].leases.push(lease);
+      }
+
+    });
+
+    type LeasePropertyData = {
+      property_promise: Promise<Property | undefined>,
+      leases: Lease[]
+    };
+    // resolve all the ownership queries and find their properties
+    let ownership_keys = Object.keys(ownerships);
+    let properties: {[key: string]: LeasePropertyData} = {};
+
+    for (let i = 0; i < ownership_keys.length; ++i) {
+
+      let ownership_data: LeaseOwnershipData = ownerships[ownership_keys[i]];
+      let ownership_: Ownership | undefined = await ownership_data.ownership_promise;
+
+      if (ownership_ != undefined 
+        && !Object.prototype.hasOwnProperty.call(properties, ownership_.property_id)) {
+          
+          // now with the ownership document, query for the property document
+          // and pass on the lease information to the property
+          let prop_id: string = ownership_.property_id;
+          let prom: Promise<Property | undefined> = new Promise((resolve, reject) => {
+            PropertyModel.findById(prop_id, (err: any, property: DocumentType<Property> | null) => {
+
+              if (err || property == null) resolve (undefined);
+              else resolve(property);
+            });
+          });
+
+          let property_lease_data: LeasePropertyData = {
+            property_promise: prom,
+            leases: ownership_data.leases
+          };
+
+           properties[ownership_.property_id] = property_lease_data;
+      }
+
+    }
+
+    // finally, resolve all the properties queried and attach their leases
+    // to their respective objects.
+
+    let properties_keys = Object.keys(properties);
+    let all_properties: Property[] = [];
+
+    for (let i = 0; i < properties_keys.length; ++i) {
+
+      let property_data: LeasePropertyData = properties[properties_keys[i]];
+      let property_: Property | undefined = await property_data.property_promise;
+
+      if (property_ != undefined) {
+        property_.leases = property_data.leases;
+        all_properties.push(property_);
+      }
+    }
 
     return {
-      success: true
+      success: true,
+      data: {
+        properties: all_properties
+      }
     }
   }
 

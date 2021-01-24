@@ -58,7 +58,6 @@ export class Lease {
     // Field to store the occupant document that corresponds to 
     // the student with occupant_id
     @Field(() => Student, {nullable: true})
-    @prop({type: Student})
     occupant_doc?: Student;
 
     // Defines whether this lease is occupied by means not 

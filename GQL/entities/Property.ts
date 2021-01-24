@@ -1,6 +1,7 @@
 import {prop, DocumentType, getModelForClass, Ref} from "@typegoose/typegoose"
 import { type } from "os";
 import {Field, ObjectType, ID, InputType, Int, Float} from "type-graphql"
+import {Lease} from './Lease'
 import {APIResult} from "."
 
 import {Landlord} from './Landlord'
@@ -133,6 +134,9 @@ export class Property {
   @Field(type => [PropertyDirections], {nullable: true})
   @prop({type: [PropertyDirections]})
   directions?: PropertyDirections[];
+
+  @Field(type => [Lease], {nullable: true})
+  leases?: Lease[];
 }
 
 export const getAddress = (property_: DocumentType<Property>): string => {
