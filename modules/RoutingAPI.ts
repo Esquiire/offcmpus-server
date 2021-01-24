@@ -10,24 +10,11 @@ import {DocumentType} from '@typegoose/typegoose'
 import {getDistance} from 'geolib'
 const util = require('util')
 
-import express from 'express'
-const routingRouter = express.Router();
-
-routingRouter.get(`/test`, async (req, res) => {
-
-    let properties: DocumentType<Property>[] = await PropertyModel.find() as DocumentType<Property>[]
-    let property: DocumentType<Property> = properties[1];
-
-    RoutingAPI.generateRoutes(property);
-
-})
 
 interface LongLat {
     longitude: number
     latitude: number
 }
-
-export default routingRouter;
 
 export class RoutingAPI {
 
@@ -61,8 +48,6 @@ export class RoutingAPI {
                 longitude: response_data.lon,
                 latitude: response_data.lat
             };
-
-            console.log(`Location data: `, location_data);
 
             this.findInstituionsNear(location_data)
             .then((nearby_institutions: DocumentType<Institution>[]) => {
@@ -115,12 +100,8 @@ export class RoutingAPI {
                 .then(async (all_directions: PropertyDirections[]) => {
 
                     // save the directions information to the property
-                    console.log(`Saving property with directions! ...`);
                     property.directions = all_directions;
-                    let saved_prop = await property.save() as DocumentType<Property>;
-
-                    // print saved property data
-                    console.log(saved_prop);
+                    property.save();
 
                 })
 

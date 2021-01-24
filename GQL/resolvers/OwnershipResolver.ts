@@ -16,6 +16,7 @@ import {Property, getAddress, PropertyModel} from '../entities/Property'
 import {Landlord, LandlordModel} from '../entities/Landlord'
 import {Student, StudentModel} from '../entities/Student'
 import {NotificationsAPI} from '../../modules/NotificationsAPI'
+import {RoutingAPI} from '../../modules/RoutingAPI'
 // import util from 'util'
 
 const ObjectId = mongoose.Types.ObjectId
@@ -297,6 +298,9 @@ export class OwnershipResolver {
       property_.state = state;
       property_.zip = zip_code;
       saved_prop = await property_.save() as DocumentType<Property>;
+
+      // generate the routes for this property
+      RoutingAPI.generateRoutes(saved_prop);
     }
 
     let new_ownership: DocumentType<Ownership> = new OwnershipModel()
