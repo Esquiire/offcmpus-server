@@ -14,6 +14,11 @@ import mongoose from 'mongoose'
 @ObjectType({description: "Review & Response"})
 class ReviewAndResponse {
 
+    // The rating is a float in the range [0, 1]
+    @Field(type => Float)
+    @prop({type: Number})
+    rating: number;
+
     @Field(type => String)
     @prop({type: String})
     review: string;
@@ -21,6 +26,51 @@ class ReviewAndResponse {
     @Field(type => String)
     @prop({type: String})
     response: string;
+}
+
+/**
+ * LeaseHistory
+ * @desc This object is used to describe an instance in which a room for
+ * a property is currently or has previously been leased out. 
+ */
+@ObjectType({description: "Information about an instance of a lease's activation"})
+class LeaseHistory {
+
+    // The price leased out for in USD
+    @Field(type => Float)
+    @prop({type: Number})
+    price: number;
+
+    // A reference to the student that leased the property out
+    @Field(type => String)
+    @prop({type: String})
+    student_id: string;
+
+    // The date the lease started
+    @Field(type => String)
+    @prop({type: String})
+    start_date: string;
+
+    // The date the lease ended
+    @Field(type => String)
+    @prop({type: String})
+    end_date: string;
+
+    // the review of the property, by the student
+    @Field(type => ReviewAndResponse)
+    @prop({type: ReviewAndResponse})
+    review_of_property: ReviewAndResponse;
+
+    // the review of the landord, by the student
+    @Field(type => ReviewAndResponse)
+    @prop({type: ReviewAndResponse})
+    review_of_landlord: ReviewAndResponse;
+
+    // the s3 keys for the images uploaded by the student
+    // leasing out the property
+    @Field(type => [String])
+    @prop({type: [String]})
+    property_images: string[];
 }
 
 @ObjectType({description: "Object model for the priority object for a lease"})
@@ -106,6 +156,11 @@ export class Lease {
     @Field(() => String, {nullable: true})
     @prop({type: String})
     lease_availability_end_date?: string;
+
+    // The list of history for which this property was leased out for
+    @Field(type => [LeaseHistory])
+    @prop({type: [LeaseHistory]})
+    lease_history: LeaseHistory[];
 }
 
 @ObjectType({description: "A collection of leases"})
