@@ -379,6 +379,7 @@ type Query {
   getStudent(_id: String!): StudentAPIResponse!
   getStudentSavedCollection(_id: String!, collectionOptions: CollectionFetchInput!): PropertyCollectionEntriesAPIResponse!
   resendEamilConfirmation(landlord_id: String!): LandlordAPIResponse!
+  searchForProperties: PropertyListAPIResponse!
   searchProperties(searchOptions: PropertySearchInput!): PropertyListAPIResponse!
   verifyAddress(address_1: String!, address_2: String!, city: String!, state: String!, zip: String!): AddressVerificationAPIResponse!
 }

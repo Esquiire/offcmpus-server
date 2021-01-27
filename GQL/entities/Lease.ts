@@ -5,6 +5,24 @@ import {APIResult} from "."
 import { DocumentType } from "@typegoose/typegoose"
 import mongoose from 'mongoose'
 
+/**
+ * Review & Response
+ * @desc This object is used to describe a review that is made
+ * by a student. For each review, the authorized landlord can respond
+ * to the review.
+ */
+@ObjectType({description: "Review & Response"})
+class ReviewAndResponse {
+
+    @Field(type => String)
+    @prop({type: String})
+    review: string;
+
+    @Field(type => String)
+    @prop({type: String})
+    response: string;
+}
+
 @ObjectType({description: "Object model for the priority object for a lease"})
 export class LeasePriority {
     
