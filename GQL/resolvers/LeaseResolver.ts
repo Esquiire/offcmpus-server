@@ -1,7 +1,7 @@
 import {Resolver, Mutation, Arg, Args, Query} from 'type-graphql'
 import {DocumentType} from '@typegoose/typegoose'
 import {Lease, LeaseModel, LeaseUpdateInput, LeasePriority,
-    LeaseCollectionAPIResponse, LeaseAPIResponse} from '../entities/Lease'
+    LeaseCollectionAPIResponse, LeaseAPIResponse, LeaseHistory} from '../entities/Lease'
 import {Ownership, OwnershipModel} from '../entities/Ownership'
 import {Student, StudentModel} from '../entities/Student'
 import mongoose, {DocumentQuery} from 'mongoose'
@@ -105,6 +105,129 @@ export class LeaseResolver {
             success: true,
             data: lease_
         }
+    }
+
+    /**
+     * @desc Determine whether or not the student can add a review to the
+     * property with the given id.
+     * 
+     * @param student_id The id of the student
+     * @param property_id The id of the property
+     */
+    @Query(returns => LeaseAPIResponse)
+    async canAddReview(
+        @Arg("student_id") student_id: string,
+        @Arg("property_id") property_id: string
+    ): Promise<LeaseAPIResponse>
+    {
+
+        if (!ObjectId.isValid(student_id) || !ObjectId(property_id)) {
+            return { success: false, error: "Invalid id" }
+        }
+
+        // find the ownership document for this property
+        let ownerships: DocumentType<Ownership>[]  = await OwnershipModel.find({
+            property_id,
+            status: 'confirmed'
+        }) as DocumentType<Ownership>[];
+
+        if (ownerships == undefined) {
+            return { success: false, error: "No ownership found for the property" }
+        }
+        else if (ownerships.length > 1) {
+            return { success: false, error: "More than one ownership active for this property" }
+        }
+
+        let ownership: DocumentType<Ownership> = ownerships[0];
+        
+        // Find the leases for this ownership
+        let leases: DocumentType<Lease>[] = await LeaseModel.find({
+            ownership_id: ownership._id
+        }) as DocumentType<Lease>[];
+
+        // go through all of the lease histories for each lease. If there is a lease history for the student_id
+        // provided, then the student can add a review.
+        for (let i = 0; i < leases.length; ++i) {
+            if (leases[i].lease_history == undefined) continue;
+            for (let j = 0; j < leases[i].lease_history.length; ++j) {
+                let history_: LeaseHistory = leases[i].lease_history[j];
+                if (history_.student_id == student_id) {
+
+                    // this lease history is for the student, therefore they can write a review
+                    return { success: true }
+                }
+            }
+        }
+
+        // no lease history found for the student and the property in question
+        return { success: false }
+
+    }
+
+    /**
+     * @desc TEMPORARY RESOLVER: This resolver is only meant to test the
+     * review system, which only allows students who have previously leased
+     * a property to add a review.
+     * @param student_id 
+     * @param start_date 
+     * @param end_date 
+     */
+    @Mutation(returns => LeaseAPIResponse)
+    async addLeaseHistory (
+        @Arg("lease_id") lease_id: string,
+        @Arg("student_id") student_id: string,
+        @Arg("start_date") start_date: string,
+        @Arg("end_date") end_date: string     
+    ): Promise<LeaseAPIResponse>
+    {
+
+        if (!ObjectId.isValid(lease_id) || !ObjectId.isValid(student_id)) {
+            return {
+                success: false,
+                error: "Id provided is invalid"
+            }
+        }
+
+        // find the lease
+        let lease: DocumentType<Lease> = await LeaseModel.findById(lease_id) as DocumentType<Lease>
+
+        // ensure that the lease exists
+        if (lease == undefined) {
+            return {
+                success: false,
+                error : `Lease with id ${lease_id} does not exist`
+            }
+        }
+
+        // check if the student exists
+        if ( (await StudentModel.findById(student_id) as DocumentType<Student>) == undefined ) {
+            return {
+                success: false,
+                error: `Student with id ${student_id} does not exist`
+            }
+        }
+
+        // create the new lease history 
+        let new_history: LeaseHistory = new LeaseHistory();
+        new_history.price = 0;
+        new_history.student_id = student_id;
+        new_history.start_date = start_date;
+        new_history.end_date = end_date;
+
+        if (lease.lease_history == undefined) {
+            lease.lease_history = [];
+        }
+
+        lease.lease_history.push(new_history);
+
+        // save the lease
+        lease.save();
+
+        return {
+            success: true,
+            data: lease
+        };
+
     }
 
     /**
