@@ -226,6 +226,7 @@ type MultipleLeaseDocumentsAPIResponse {
 type Mutation {
   activateLease(lease_document_id: String!, lease_end_date: String!, lease_id: String!, lease_start_date: String!, price_per_month: Float!): LeaseAPIResponse!
   addImagesToProperty(property_id: String!, s3_keys: [String!]!): PropertyAPIResponse!
+  addLeaseHistory(end_date: String!, lease_id: String!, start_date: String!, student_id: String!): LeaseAPIResponse!
   addNewLeaseDocument(document_keys: [String!]!, document_mimes: [String!]!, landlord_id: String!, lease_name: String!): LeaseDocumentAPIResponse!
   addOwnershipConfirmationActivity(date_submitted: String!, message: String!, ownership_id: String!, user_id: String!, user_type: String!): OwnershipAPIResponse!
   addOwnershipDocuments(documents_info: [OwnershipDocumentInput!]!, ownership_id: String!): OwnershipAPIResponse!
