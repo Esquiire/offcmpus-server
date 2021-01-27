@@ -34,7 +34,7 @@ class ReviewAndResponse {
  * a property is currently or has previously been leased out. 
  */
 @ObjectType({description: "Information about an instance of a lease's activation"})
-class LeaseHistory {
+export class LeaseHistory {
 
     // The price leased out for in USD
     @Field(type => Float)
@@ -57,14 +57,14 @@ class LeaseHistory {
     end_date: string;
 
     // the review of the property, by the student
-    @Field(type => ReviewAndResponse)
+    @Field(type => ReviewAndResponse, {nullable: true})
     @prop({type: ReviewAndResponse})
-    review_of_property: ReviewAndResponse;
+    review_of_property?: ReviewAndResponse;
 
     // the review of the landord, by the student
-    @Field(type => ReviewAndResponse)
+    @Field(type => ReviewAndResponse, {nullable: true})
     @prop({type: ReviewAndResponse})
-    review_of_landlord: ReviewAndResponse;
+    review_of_landlord?: ReviewAndResponse;
 
     // the s3 keys for the images uploaded by the student
     // leasing out the property

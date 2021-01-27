@@ -140,6 +140,7 @@ type Lease {
   lease_availability_end_date: String
   lease_availability_start_date: String
   lease_document_id: String
+  lease_history: [LeaseHistory!]!
   occupant_doc: Student
   occupant_id: String
   ownership_id: String!
@@ -179,6 +180,17 @@ type LeaseDocumentAPIResponse {
   data: LeaseDocument
   error: String
   success: Boolean!
+}
+
+"""Information about an instance of a lease's activation"""
+type LeaseHistory {
+  end_date: String!
+  price: Float!
+  property_images: [String!]!
+  review_of_landlord: ReviewAndResponse
+  review_of_property: ReviewAndResponse
+  start_date: String!
+  student_id: String!
 }
 
 """Object model for the priority object for a lease"""
@@ -382,6 +394,13 @@ type Query {
   searchForProperties: PropertyListAPIResponse!
   searchProperties(searchOptions: PropertySearchInput!): PropertyListAPIResponse!
   verifyAddress(address_1: String!, address_2: String!, city: String!, state: String!, zip: String!): AddressVerificationAPIResponse!
+}
+
+"""Review & Response"""
+type ReviewAndResponse {
+  rating: Float!
+  response: String!
+  review: String!
 }
 
 type S3Document {

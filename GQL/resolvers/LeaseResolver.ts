@@ -1,7 +1,7 @@
 import {Resolver, Mutation, Arg, Args, Query} from 'type-graphql'
 import {DocumentType} from '@typegoose/typegoose'
 import {Lease, LeaseModel, LeaseUpdateInput, LeasePriority,
-    LeaseCollectionAPIResponse, LeaseAPIResponse} from '../entities/Lease'
+    LeaseCollectionAPIResponse, LeaseAPIResponse, LeaseHistory} from '../entities/Lease'
 import {Ownership, OwnershipModel} from '../entities/Ownership'
 import {Student, StudentModel} from '../entities/Student'
 import mongoose, {DocumentQuery} from 'mongoose'
@@ -105,6 +105,72 @@ export class LeaseResolver {
             success: true,
             data: lease_
         }
+    }
+
+    /**
+     * @desc TEMPORARY RESOLVER: This resolver is only meant to test the
+     * review system, which only allows students who have previously leased
+     * a property to add a review.
+     * @param student_id 
+     * @param start_date 
+     * @param end_date 
+     */
+    @Mutation(returns => LeaseAPIResponse)
+    async addLeaseHistory (
+        @Arg("lease_id") lease_id: string,
+        @Arg("student_id") student_id: string,
+        @Arg("start_date") start_date: string,
+        @Arg("end_date") end_date: string     
+    ): Promise<LeaseAPIResponse>
+    {
+
+        if (!ObjectId.isValid(lease_id) || !ObjectId.isValid(student_id)) {
+            return {
+                success: false,
+                error: "Id provided is invalid"
+            }
+        }
+
+        // find the lease
+        let lease: DocumentType<Lease> = await LeaseModel.findById(lease_id) as DocumentType<Lease>
+
+        // ensure that the lease exists
+        if (lease == undefined) {
+            return {
+                success: false,
+                error : `Lease with id ${lease_id} does not exist`
+            }
+        }
+
+        // check if the student exists
+        if ( (await StudentModel.findById(student_id) as DocumentType<Student>) == undefined ) {
+            return {
+                success: false,
+                error: `Student with id ${student_id} does not exist`
+            }
+        }
+
+        // create the new lease history 
+        let new_history: LeaseHistory = new LeaseHistory();
+        new_history.price = 0;
+        new_history.student_id = student_id;
+        new_history.start_date = start_date;
+        new_history.end_date = end_date;
+
+        if (lease.lease_history == undefined) {
+            lease.lease_history = [];
+        }
+
+        lease.lease_history.push(new_history);
+
+        // save the lease
+        lease.save();
+
+        return {
+            success: true,
+            data: lease
+        };
+
     }
 
     /**
