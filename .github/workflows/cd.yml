@@ -7,7 +7,7 @@ on:
 
 jobs:
   cd:
-    runs-on: [self-hosted, aws, ec2]
+    runs-on: [self-hosted, prod, aws, ec2]
     timeout-minutes: 5
 
     steps:
