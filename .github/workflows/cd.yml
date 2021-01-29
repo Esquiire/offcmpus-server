@@ -1,0 +1,23 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - "#11"
+
+jobs:
+  cd:
+    runs-on: [self-hosted, aws, ec2]
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Check node
+        run: node --version
+
+      - name: Check npm
+        run: npm --version
+
+      - name: Check pm2
+        run: pm2 list
