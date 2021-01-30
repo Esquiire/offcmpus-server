@@ -7,6 +7,7 @@ on:
 
 jobs:
   cd:
+    name: Deploy to prod
     runs-on: [self-hosted, prod, aws, ec2]
     timeout-minutes: 5
 
