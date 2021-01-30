@@ -12,6 +12,8 @@ import {Property,
 import {Lease, LeaseModel, createEmptyLease} from '../entities/Lease'
 import {Landlord, LandlordModel} from '../entities/Landlord'
 import {Ownership, OwnershipModel, StatusType} from '../entities/Ownership'
+import {PropertySummary, PropertySummaryAPIResponse} from '../entities/auxillery/PropertySummary'
+
 import {DocumentType} from "@typegoose/typegoose"
 import mongoose from 'mongoose'
 import chalk from 'chalk'
@@ -337,6 +339,52 @@ export class PropertyResolver {
       });
     })
 
+  }
+
+  @Query(() => PropertySummaryAPIResponse)
+  async getPropertySummary(
+    @Arg("property_id") property_id: string
+  ): Promise<PropertySummaryAPIResponse>
+  {
+
+    if (!ObjectId.isValid(property_id)) {
+      return { success: false, error: "property does not exist." }
+    }
+
+    let summary: PropertySummary = new PropertySummary();
+
+    // get the property information
+    let property_: DocumentType<Property> = await PropertyModel.findById(property_id) as DocumentType<Property>
+    if (property_ == undefined) {
+      return { success: false, error: "Property could not be found." }
+    }
+
+    // get the ownership information
+    let ownerships_: DocumentType<Ownership>[] = 
+      await OwnershipModel.find({property_id, status: 'confirmed'}) as DocumentType<Ownership>[];
+    
+    if (ownerships_ == undefined || ownerships_.length != 1) {
+      return { success: false, error: "Could not resolve the owner of this property" }
+    }
+
+    // get the landlord information
+    let landlord_: DocumentType<Landlord> = await LandlordModel.findById(ownerships_[0].landlord_id) as DocumentType<Landlord>
+    if (landlord_ == undefined) {
+      return { success: false, error: "No landlord found for this property's ownership" }
+    }
+
+    // get the lease information
+    let leases_: DocumentType<Lease>[] = await LeaseModel.find({ownership_id: ownerships_[0]._id}) as DocumentType<Lease>[]
+
+    // attach to the summary
+    summary.property = property_;
+    summary.landlord = landlord_;
+    summary.leases = leases_.filter((lease_: Lease) => lease_.active == true);
+    
+    return {
+      success: true,
+      data: summary
+    }
   }
 
   @Mutation(() => PropertyAPIResponse)

@@ -12,7 +12,7 @@ import mongoose from 'mongoose'
  * to the review.
  */
 @ObjectType({description: "Review & Response"})
-class ReviewAndResponse {
+export class ReviewAndResponse {
 
     // The rating is a float in the range [0, 1]
     @Field(type => Float)
@@ -23,9 +23,20 @@ class ReviewAndResponse {
     @prop({type: String})
     review: string;
 
-    @Field(type => String)
+    @Field(type => String, {nullable: true})
     @prop({type: String})
-    response: string;
+    response?: string;
+}
+
+@ObjectType({description: "Property Image info"})
+export class LeaseImageInfo {
+  @Field(type => String)
+  @prop({type: String})
+  s3_key: string;
+
+  @Field(type => String)
+  @prop({type: String})
+  date_uploaded: string;
 }
 
 /**
@@ -68,9 +79,9 @@ export class LeaseHistory {
 
     // the s3 keys for the images uploaded by the student
     // leasing out the property
-    @Field(type => [String])
-    @prop({type: [String]})
-    property_images: string[];
+    @Field(type => [LeaseImageInfo])
+    @prop({type: [LeaseImageInfo]})
+    property_images: LeaseImageInfo[];
 }
 
 @ObjectType({description: "Object model for the priority object for a lease"})
@@ -170,8 +181,18 @@ class LeaseCollection {
     leases: Lease[];
 }
 
+@ObjectType()
+class Digit {
+
+    @Field(type => Number)
+    value: number;
+}
+
 @ObjectType({description: "API Response class for the Lease object."})
 export class LeaseAPIResponse extends APIResult(Lease) {}
+
+@ObjectType({description: "Represents a digit"})
+export class DigitAPIResponse extends APIResult(Digit) {}
 
 @ObjectType({description: "API Response class for Lease collection object"})
 export class LeaseCollectionAPIResponse extends APIResult(LeaseCollection) {}

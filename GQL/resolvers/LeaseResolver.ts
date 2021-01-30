@@ -1,7 +1,7 @@
 import {Resolver, Mutation, Arg, Args, Query} from 'type-graphql'
 import {DocumentType} from '@typegoose/typegoose'
-import {Lease, LeaseModel, LeaseUpdateInput, LeasePriority,
-    LeaseCollectionAPIResponse, LeaseAPIResponse, LeaseHistory} from '../entities/Lease'
+import {Lease, LeaseModel, LeaseUpdateInput, LeasePriority, ReviewAndResponse,
+    LeaseCollectionAPIResponse, LeaseAPIResponse, DigitAPIResponse, LeaseHistory} from '../entities/Lease'
 import {Ownership, OwnershipModel} from '../entities/Ownership'
 import {Student, StudentModel} from '../entities/Student'
 import mongoose, {DocumentQuery} from 'mongoose'
@@ -113,12 +113,16 @@ export class LeaseResolver {
      * 
      * @param student_id The id of the student
      * @param property_id The id of the property
+     * 
+     * If they can add a review, within the data, set the digit for the api response as:
+     *  1 -> if they have an existing review for this property
+     *  2 -> if they do not have a review on record for this property
      */
-    @Query(returns => LeaseAPIResponse)
+    @Query(returns => DigitAPIResponse)
     async canAddReview(
         @Arg("student_id") student_id: string,
         @Arg("property_id") property_id: string
-    ): Promise<LeaseAPIResponse>
+    ): Promise<DigitAPIResponse>
     {
 
         if (!ObjectId.isValid(student_id) || !ObjectId(property_id)) {
@@ -154,7 +158,11 @@ export class LeaseResolver {
                 if (history_.student_id == student_id) {
 
                     // this lease history is for the student, therefore they can write a review
-                    return { success: true }
+                    if (history_.review_of_landlord != undefined
+                    || history_.review_of_property != undefined) {
+                        return { success: true, data: { value: 1 } }   
+                    }
+                    else return { success: true, data: { value: 2 } }
                 }
             }
         }
@@ -227,6 +235,109 @@ export class LeaseResolver {
             success: true,
             data: lease
         };
+
+    }
+
+    @Mutation(returns => LeaseAPIResponse)
+    async addReviewForLease
+    (
+        @Arg("lease_id") lease_id: string,
+        @Arg("student_id") student_id: string,
+        @Arg("property_review") property_review: string,
+        @Arg("property_rating") property_rating: number,
+        @Arg("landlord_review") landlord_review: string,
+        @Arg("landlord_rating") landlord_rating: number,
+        @Arg("property_images", returns => [String]) property_images: string[]
+    ): Promise<LeaseAPIResponse>
+    {
+
+        // Find the most recent leaseHistory for this student and update
+        // the review for that entry.
+
+        // If there is no lease history for this student, no review can be
+        // written.
+
+        if (!ObjectId.isValid(lease_id) || !ObjectId.isValid(student_id)) {
+            return { success: false, error: "Invalid ids" };
+        }
+
+        let lease_: DocumentType<Lease> = await LeaseModel.findById(lease_id) as DocumentType<Lease>;
+        if (!lease_) {
+            return { success: false, error: "No lease with that id" }
+        };
+
+        let history_found: boolean = false;
+        if (lease_.lease_history != undefined) {
+
+            let history_index = -1;
+            for (let i = 0; i < lease_.lease_history.length; ++i) {
+
+                if (lease_.lease_history[i].student_id == student_id) {
+
+                    if (history_index == -1) history_index = i;
+                    else {
+                        let prev: LeaseHistory = lease_.lease_history[history_index];
+                        let curr: LeaseHistory = lease_.lease_history[i];
+
+                        let prev_date: Date = new Date(prev.end_date);
+                        let curr_date: Date = new Date(curr.end_date);
+
+                        if (curr_date > prev_date) {
+                            history_index = i;
+                        }
+                    }
+                    history_found = true;
+                }
+            }
+            if (history_index != -1) {
+
+                let i = history_index;
+                // update the reviews
+                if (lease_.lease_history[i].review_of_property == undefined) {
+                    lease_.lease_history[i].review_of_property = new ReviewAndResponse();
+                    lease_.lease_history[i].review_of_property!.rating = property_rating;
+                    lease_.lease_history[i].review_of_property!.review = property_review;
+                }
+                else if (lease_.lease_history[i].review_of_property!.response == undefined) {
+                    lease_.lease_history[i].review_of_property!.rating = property_rating;
+                    lease_.lease_history[i].review_of_property!.review = property_review;
+                }
+
+                if (lease_.lease_history[i].review_of_landlord == undefined) {
+                    lease_.lease_history[i].review_of_landlord = new ReviewAndResponse();
+                    lease_.lease_history[i].review_of_landlord!.rating = landlord_rating;
+                    lease_.lease_history[i].review_of_landlord!.review = landlord_review;
+                }
+                else if (lease_.lease_history[i].review_of_landlord!.response == undefined) {
+                    lease_.lease_history[i].review_of_landlord!.rating = landlord_rating;
+                    lease_.lease_history[i].review_of_landlord!.review = landlord_review;
+                }
+
+                console.log(lease_.lease_history[i]);
+                console.log(lease_.lease_history[i].property_images);
+                // add the images to the lease history
+                if (!lease_.lease_history[i].property_images) {
+                    console.log("Creating property images...");
+                    lease_.lease_history[i].property_images = [];
+                }
+
+                console.log("Images to add: ", property_images.length);
+                for (let k = 0; k < property_images.length; ++k) {
+                    lease_.lease_history[i].property_images.push({
+                        s3_key: property_images[k],
+                        date_uploaded: new Date().toISOString()
+                    });
+                }
+
+            }
+        }
+
+        if (!history_found) {
+            return { success: false, error: "No lease history found for this student" }
+        }
+
+        lease_.save();
+        return { success: true, data: lease_ }
 
     }
 
