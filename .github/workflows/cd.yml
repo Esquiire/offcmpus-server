@@ -18,15 +18,11 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build
-        run: npm run build
+      - name: Stop current app
+        run: pm2 stop offcmpus_api_node_app
 
-      # - name: Stop current app
-      #   run: pm2 stop offcmpus_api_node_app
+      - name: Delete old app
+        run: pm2 delete offcmpus_api_node_app
 
-      # - name: Start new app
-      #   run: pm2 start --name offcmpus_api_node_app server.js
-      #   working-directory: dist
-
-      # - name: Check pm2
-      #   run: pm2 list
+      - name: Start new app
+        run: pm2 start --name offcmpus_api_node_app ./node_modules/.bin/ts-node -- -P tsconfig.json --transpile-only ./server.ts
