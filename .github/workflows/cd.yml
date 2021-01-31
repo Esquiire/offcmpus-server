@@ -1,0 +1,37 @@
+name: CD
+
+on:
+  workflow_dispatch:
+
+jobs:
+  cd:
+    name: Deploy to prod
+    runs-on: [self-hosted, prod, aws, ec2]
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup prod env
+        run: cp /home/ubuntu/.env.production .
+
+      - uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: api-${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            api-${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Stop current app
+        run: pm2 stop offcmpus_api_node_app
+
+      - name: Delete old app
+        run: pm2 delete offcmpus_api_node_app
+
+      - name: Start new app
+        run: pm2 start --name offcmpus_api_node_app ./node_modules/.bin/ts-node -- -P tsconfig.json --transpile-only ./server.ts
+        env:
+          NODE_ENV: production
