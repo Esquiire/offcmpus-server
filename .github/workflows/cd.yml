@@ -15,8 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Check env vars
-        run: echo $SERVER_PORT
+      - name: Setup prod env
+        run: echo "{{ secrets.PROD_ENV_SECRETS }}" > .env.production
 
       # - name: Install dependencies
       #   run: npm install
@@ -29,3 +29,5 @@ jobs:
 
       # - name: Start new app
       #   run: pm2 start --name offcmpus_api_node_app ./node_modules/.bin/ts-node -- -P tsconfig.json --transpile-only ./server.ts
+      #   env:
+      #     NODE_ENV: production
