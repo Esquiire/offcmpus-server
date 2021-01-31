@@ -16,7 +16,9 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Setup prod env
-        run: echo "{{ secrets.PROD_ENV_SECRETS }}" > .env.production
+        run: echo $PROD_ENV_SECRETS > .env.production
+        env:
+          PROD_ENV_SECRETS: ${{ secrets.PROD_ENV_SECRETS }}
 
       - uses: actions/cache@v2
         with:
