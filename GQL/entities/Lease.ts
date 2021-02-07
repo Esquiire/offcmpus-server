@@ -1,6 +1,9 @@
 import { prop, getModelForClass } from "@typegoose/typegoose"
 import { Field, ObjectType, InputType, ID, Int, Float } from "type-graphql"
 import { Student } from './Student'
+import { Property } from './Property'
+import { Institution } from './Institution'
+import { LeaseDocument } from './LeaseDocument'
 import {APIResult} from "."
 import { DocumentType } from "@typegoose/typegoose"
 import mongoose from 'mongoose'
@@ -26,6 +29,36 @@ export class ReviewAndResponse {
     @Field(type => String, {nullable: true})
     @prop({type: String})
     response?: string;
+}
+
+@ObjectType({description: "Student interest object"})
+export class StudentInterest {
+
+    /**
+     * The id of the student that expressed interest for the
+     * property.
+     */
+    @Field(type => String)
+    @prop({type: String})
+    student_id: string;
+
+    /**
+     * The date that the student expressed their interest
+     * for the property.
+     */
+    @Field(type => String)
+    @prop({type: String})
+    date: string;
+
+    /**
+     * If this is set, it describes whether the landlord has accepted
+     * the student's request to take the lease.
+     * If not set, then no decision has been made yet.
+     */
+    @Field(type => Boolean, {nullable: true})
+    @prop({type: Boolean})
+    accepted?: boolean;
+
 }
 
 @ObjectType({description: "Property Image info"})
@@ -171,6 +204,47 @@ export class Lease {
     @Field(type => [LeaseHistory])
     @prop({type: [LeaseHistory]})
     lease_history: LeaseHistory[];
+
+    // All of the students that have expressed interest for this lease
+    @Field(type => [StudentInterest])
+    @prop({type: [StudentInterest]})
+    student_interests: StudentInterest[];
+}
+
+@ObjectType({description: "Summary of lease information"})
+export class LeaseSummary {
+
+    // The room number this lease is for in the property
+    @Field(type => Int)
+    @prop({type: Int})
+    room_no: number;
+
+    // The property that this lease is for
+    @Field(type => Property)
+    @prop({type: Property})
+    property: Property;
+
+    // The lease document for this lease summary
+    @Field(type => Lease)
+    @prop({type: Lease})
+    lease: Lease;
+
+    // The list of all the institutions that all of the
+    // students who expressed interest aree from.
+    @Field(type => [Institution])
+    @prop({type: [Institution]})
+    institutions: Institution[];
+
+    // The array os students that are referenced somewhere
+    // in this summary (e.g in the StudentInterest within the
+    // lease)
+    @Field(type => [Student])
+    @prop({type: [Student]})
+    students: Student[];
+
+    @Field(type => LeaseDocument, {nullable: true})
+    @prop({type: LeaseDocument})
+    lease_doc?: LeaseDocument;
 }
 
 @ObjectType({description: "A collection of leases"})
@@ -193,6 +267,9 @@ export class LeaseAPIResponse extends APIResult(Lease) {}
 
 @ObjectType({description: "Represents a digit"})
 export class DigitAPIResponse extends APIResult(Digit) {}
+
+@ObjectType({description: "API Response for lease summary"})
+export class LeaseSummaryAPIResponse extends APIResult(LeaseSummary) {}
 
 @ObjectType({description: "API Response class for Lease collection object"})
 export class LeaseCollectionAPIResponse extends APIResult(LeaseCollection) {}

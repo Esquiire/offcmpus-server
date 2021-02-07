@@ -4,6 +4,7 @@ import {Student,
   StudentInput, 
   PropertyCollectionEntriesAPIResponse, 
   CollectionFetchInput, 
+  StudentNotificationAPIResponse,
   StudentModel, 
   PropertyCollectionEntries,
   SearchStatus} from '../entities/Student'
@@ -99,6 +100,41 @@ export class StudentResolver {
     return {
       success: true,
       data: entries
+    }
+  }
+
+  /**
+   * @desc get the notifications for the student with the
+   * specified student_id
+   * @param student_id The student to get the notificaions for
+   */
+  @Query(type => StudentNotificationAPIResponse)
+  async getStudentNotifications(
+    @Arg("student_id") student_id: string
+  ): Promise<StudentNotificationAPIResponse>
+  {
+
+    if (!ObjectId.isValid(student_id)) {
+      return {
+        success: false,
+        error: "Invalid id"
+      }
+    }
+
+    let student: DocumentType<Student> = await StudentModel.findById(student_id) as DocumentType<Student>;
+    if (!student) {
+      return {
+        success: false,
+        error: "Student not found"
+      }
+    }
+
+
+    return {
+      success: true,
+      data: {
+        notifications: student.notifications == undefined ? [] : student.notifications
+      }
     }
 
   }

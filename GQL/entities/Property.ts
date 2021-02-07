@@ -139,8 +139,14 @@ export class Property {
   leases?: Lease[];
 }
 
-export const getAddress = (property_: DocumentType<Property>): string => {
-  return `${property_.address_line}, ${property_.address_line_2 == "" ? '' : `${property_.address_line_2}, ${property_.city} ${property_.state}, ${property_.zip}`}`
+export const getAddress = (property: DocumentType<Property>): string => {
+  let addr: string = `${property.address_line}, `;
+  if (property.address_line_2) {
+    addr += `${property.address_line_2}, `;
+  }
+  addr += `${property.city} ${property.state}, ${property.zip}`;
+  return addr;
+  //return `${property_.address_line}, ${property_.address_line_2 == "" ? '' : `${property_.address_line_2}, ${property_.city} ${property_.state}, ${property_.zip}`}`
 }
 
 @InputType()

@@ -15,7 +15,7 @@ import {Ownership, OwnershipModel, StatusType} from '../entities/Ownership'
 import {PropertySummary, PropertySummaryAPIResponse} from '../entities/auxillery/PropertySummary'
 
 import {DocumentType} from "@typegoose/typegoose"
-import mongoose from 'mongoose'
+import mongoose, {DocumentQuery} from 'mongoose'
 import chalk from 'chalk'
 const ObjectId = mongoose.Types.ObjectId
 
@@ -88,7 +88,8 @@ export class PropertyResolver {
   @Query(() => PropertyAPIResponse)
   async getPropertyOwnedByLandlord(
     @Arg("property_id") property_id: string,
-    @Arg("landlord_id") landlord_id: string
+    @Arg("landlord_id") landlord_id: string,
+    @Arg("with_leases", {nullable: true}) with_leases?: boolean
   ): Promise<PropertyAPIResponse>
   {
 
@@ -122,6 +123,18 @@ export class PropertyResolver {
         error: `No property found`
       }
     }
+
+    // get the leases for this proeprty
+    if (with_leases == true) {
+
+      let leases: DocumentType<Lease>[] = await LeaseModel.find({
+        ownership_id: ownership_._id
+      }) as DocumentType<Lease>[];
+
+      property_.leases = leases;
+
+    }
+
 
     console.log(chalk.bgGreen(`✔ Successfully retrieved property ${property_id} owned by ${landlord_id}`))
     return {
@@ -276,7 +289,8 @@ export class PropertyResolver {
   @Query(() => PropertyListAPIResponse)
   async getPropertiesForLandlord(
     @Arg("landlord_id") landlord_id: string,
-    @Arg("status", type => String, {nullable: true}) status: StatusType
+    @Arg("with_leases", type => Boolean, {nullable: true}) with_leases?: boolean,
+    @Arg("status", type => String, {nullable: true}) status?: StatusType
   ): Promise<PropertyListAPIResponse> {
 
     console.log(chalk.bgBlue(`👉 getPropertiesForLandlord()`))
@@ -288,12 +302,36 @@ export class PropertyResolver {
     }
 
     let ownerships: DocumentType<Ownership>[] = await OwnershipModel.find({landlord_id}) as DocumentType<Ownership>[]
-    let _properties: Promise<DocumentType<Property>>[] = ownerships
+    let property_leases: {[key: string]: DocumentQuery<DocumentType<Lease>[], DocumentType<Lease>, {}>} = {};
+    let _properties: Promise<DocumentType<Property> | null>[] = ownerships
       .filter((ownership: DocumentType<Ownership>) => status != null ? ownership.status == status : ownership.status == 'confirmed')
-      .map(async (ownership: DocumentType<Ownership>, i: number) => await PropertyModel.findById(ownership.property_id) as DocumentType<Property>)
+      .map(async (ownership: DocumentType<Ownership>) => {
+
+        // for each property, if we are querying leases too, add the lease query to the
+        // property_leases object.
+        if (with_leases) {
+          property_leases[ownership.property_id] = LeaseModel.find({
+            ownership_id: ownership._id
+          });
+        }
+
+        return PropertyModel.findById(ownership.property_id);
+      })
 
     let properties = []
-    for (let i = 0; i < _properties.length; ++i) properties.push(await _properties[i])
+    for (let i = 0; i < _properties.length; ++i) {
+
+      let prop: DocumentType<Property> | null = await _properties[i];
+      if (prop != null) {
+        // wait for the leases to finish resolving
+        if (with_leases && Object.prototype.hasOwnProperty.call(property_leases, prop._id)) {
+          let leases: DocumentType<Lease>[] = (await property_leases[prop._id]).filter((lease_: DocumentType<Lease>) => lease_ != null);
+          prop.leases = leases;
+        }
+
+        properties.push(prop);
+      }
+    }
 
     return {
       success: true,

@@ -1,8 +1,21 @@
 import webpush from 'web-push'
 import {Landlord, PushSubscription, initializeLandlordSettings} from '../GQL/entities/Landlord'
-import {Student, initializeStudentSettings} from '../GQL/entities/Student'
+import {Student, StudentModel, StudentNotification, initializeStudentSettings} from '../GQL/entities/Student'
 import {DocumentType} from '@typegoose/typegoose'
 import SendGrid, {SendGridTemplate} from '../vendors/SendGrid'
+import mongoose from 'mongoose'
+
+const ObjectId = mongoose.Types.ObjectId
+
+interface StudentNotif {
+    subject: string
+    body: string
+    action?: {
+        action_text: string
+        action_url: string
+    }
+    student_id: string
+}
 
 /**
  * NotificationsAPI
@@ -48,6 +61,34 @@ export class NotificationsAPI {
             user_.user_settings!.push_subscriptions.push(subscription_);
         }
         return user_.save();
+    }
+
+    /**
+     * @desc Save the notification information on the student's mongoose document
+     * so that they can see it in the app.
+     */
+    async addStudentNotificationInformation ({
+        subject, body, action, student_id
+    }: StudentNotif) {
+
+        if (!ObjectId.isValid(student_id)) return;
+        let student: DocumentType<Student> = await StudentModel.findById(student_id) as DocumentType<Student>;
+        if (!student) return;
+
+        // create notifiction.
+        let notif: StudentNotification = new StudentNotification();
+        notif.date_created = new Date().toISOString();
+        notif.subject = subject;
+        notif.body = body;
+        if (action) notif.action = action;
+
+        // add the notification to the student notifications
+        if (student.notifications == undefined) student.notifications = [];
+        student.notifications.push(notif);
+
+        // save the student info
+        student.save();
+
     }
 
     /**
