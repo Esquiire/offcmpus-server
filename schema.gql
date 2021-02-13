@@ -282,6 +282,7 @@ type Mutation {
   createLandlord(new_landlord: LandlordInput!): LandlordAPIResponse!
   createOwnershipReview(address_line: String!, address_line_2: String!, city: String!, landlord_id: String!, state: String!, zip_code: String!): OwnershipAPIResponse!
   expressInterest(lease_id: String!, student_id: String!): LeaseAPIResponse!
+  markStudentNotificationAsSeen(notification_id: String!, student_id: String!): StudentNotificationAPIResponse!
   removeImageFromProperty(property_id: String!, s3_key: String!): PropertyAPIResponse!
   removePropertyFromStudentCollection(property_id: String!, student_id: String!): PropertyCollectionEntriesAPIResponse!
   setLandlordOnboarded(landlord_id: String!): LandlordAPIResponse!
@@ -544,6 +545,7 @@ type StudentInterest {
 }
 
 type StudentNotification {
+  _id: String!
   action: NotificationAction
   body: String!
   date_created: String!

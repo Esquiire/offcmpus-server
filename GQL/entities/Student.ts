@@ -118,6 +118,10 @@ export class StudentNotification {
 
   @Field(type => String)
   @prop({type: String})
+  _id: string;
+
+  @Field(type => String)
+  @prop({type: String})
   date_created: string;
 
   // The date that the notification was seen.
