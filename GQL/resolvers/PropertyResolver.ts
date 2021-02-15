@@ -5,16 +5,24 @@ import {Property,
   PropertyReviewInput,
   PropertySearchInput,
   PropertyList,
+  PropertySearchResultAPIResult,
+  PropertySearchResultCollectionAPIResult,
+  PropertySearchResult,
   AddressVerificationAPIResponse,
   PropertyListAPIResponse,
   PropertyImageInfo,
   PropertyDetails} from '../entities/Property'
+import {Student, StudentModel} from '../entities/Student'
 import {Lease, LeaseModel, createEmptyLease} from '../entities/Lease'
 import {Landlord, LandlordModel} from '../entities/Landlord'
 import {Ownership, OwnershipModel, StatusType} from '../entities/Ownership'
+import {PropertySummary, PropertySummaryAPIResponse} from '../entities/auxillery/PropertySummary'
+
 import {DocumentType} from "@typegoose/typegoose"
-import mongoose from 'mongoose'
+import mongoose, {DocumentQuery} from 'mongoose'
 import chalk from 'chalk'
+
+const util = require('util')
 const ObjectId = mongoose.Types.ObjectId
 
 // setup usps webtools api
@@ -83,10 +91,37 @@ export class PropertyResolver {
 
   }
 
+  /**
+   * @desc Get the property data for the ownership document with the given ownership_id
+   * @param ownership_id 
+   */
+  @Query(() => PropertyAPIResponse)
+  async getPropertyForOwnership(
+    @Arg("ownership_id") ownership_id: string
+  ): Promise<PropertyAPIResponse>
+  {
+
+    if (!ObjectId.isValid(ownership_id)) {
+      return { success: false, error: "Invalid id" }
+    }
+
+    let ownership: DocumentType<Ownership> = await OwnershipModel.findById(ownership_id) as DocumentType<Ownership>;
+    if (!ownership) {
+      return { success: false, error: "Ownership not found" }
+    }
+
+    // get the property
+    let property: DocumentType<Property> = await PropertyModel.findById(ownership.property_id) as DocumentType<Property>;
+    if (!property) return { success: false, error: "Property not found" }
+  
+    return { success: true, data: property }
+  }
+
   @Query(() => PropertyAPIResponse)
   async getPropertyOwnedByLandlord(
     @Arg("property_id") property_id: string,
-    @Arg("landlord_id") landlord_id: string
+    @Arg("landlord_id") landlord_id: string,
+    @Arg("with_leases", {nullable: true}) with_leases?: boolean
   ): Promise<PropertyAPIResponse>
   {
 
@@ -121,6 +156,18 @@ export class PropertyResolver {
       }
     }
 
+    // get the leases for this proeprty
+    if (with_leases == true) {
+
+      let leases: DocumentType<Lease>[] = await LeaseModel.find({
+        ownership_id: ownership_._id
+      }) as DocumentType<Lease>[];
+
+      property_.leases = leases;
+
+    }
+
+
     console.log(chalk.bgGreen(`✔ Successfully retrieved property ${property_id} owned by ${landlord_id}`))
     return {
       success: true,
@@ -145,13 +192,13 @@ export class PropertyResolver {
 
   }
 
-  @Query(() => PropertyListAPIResponse)
+  @Query(() => PropertySearchResultCollectionAPIResult)
   async searchForProperties(
     @Arg("price_start") price_start: number,
     @Arg("price_end") price_end: number,
     @Arg("rooms", type => Int) rooms: number,
     @Arg("distance") distance: number
-  ): Promise<PropertyListAPIResponse> 
+  ): Promise<PropertySearchResultCollectionAPIResult> 
   {
 
     // TODO change placeholder query with actual search implementation
@@ -168,98 +215,105 @@ export class PropertyResolver {
       external_occupant: false
     }) as DocumentType<Lease>[];
 
-    // find all of the properties that are associated with
-    // the lease.
-    type LeaseOwnershipData = {
-      ownership_promise: Promise<Ownership | undefined>,
-      leases: Lease[]
-    };
-    let ownerships: {[key: string]: LeaseOwnershipData} = {};
+    let properties: {[key: string]: PropertySearchResult} = {};
+    let ownerships: {[key: string]: Ownership} = {};
+    let landlords: Set<string> = new Set();
+
+    type RatingCountInfo = {
+      landlord_rating_count: number,
+      property_rating_count: number
+    }
+    let rating_counts: {[key: string]: RatingCountInfo} = {};
     
-    all_active_leases.forEach((lease: DocumentType<Lease>) => {
-      if (!Object.prototype.hasOwnProperty.call(ownerships, lease.ownership_id)) {
+    for (let i = 0; i < all_active_leases.length; ++i) {
 
-        let prom: Promise<Ownership | undefined> = new Promise((resolve, reject) => {
-          // find the ownership document for each of the leases that match.
-          OwnershipModel.findById(lease.ownership_id, 
-            (err: any, ownership_doc: DocumentType<Ownership> | null) => {
-              if (err || ownership_doc == null) resolve(undefined);
-              else resolve(ownership_doc);
-          });
-        });
+      if (!Object.prototype.hasOwnProperty.call(ownerships, all_active_leases[i].ownership_id)) {
+        let ownership: DocumentType<Ownership> = await OwnershipModel.findById(all_active_leases[i].ownership_id) as DocumentType<Ownership>;
+        // cannot find ownership for the property that the lease is for
+        if (!ownership) continue;
+        ownerships[all_active_leases[i].ownership_id] = ownership;
+      }
 
-        let ownership_data: LeaseOwnershipData = {
-          ownership_promise: prom,
-          leases: [lease]
+      let ownership: Ownership = ownerships[all_active_leases[i].ownership_id]!;
+      if (!Object.prototype.hasOwnProperty.call(properties, ownership.property_id)) {
+        let property: DocumentType<Property> = await PropertyModel.findById(ownership.property_id) as DocumentType<Property>;
+        if (!property) continue;
+
+        let new_property_result: PropertySearchResult = new PropertySearchResult();
+        new_property_result.price_range = [];
+        new_property_result.property = property;
+        new_property_result.landlord_rating_avg = 0;
+        new_property_result.property_rating_avg = 0;
+        new_property_result.landlord_rating_count = 0;
+        new_property_result.property_rating_count = 0;
+        new_property_result.lease_count = 0;
+        properties[ownership.property_id] = new_property_result;
+        rating_counts[ownership.property_id] = {
+          landlord_rating_count: 0,
+          property_rating_count: 0
         };
-
-        ownerships[lease.ownership_id] = ownership_data;
       }
-      // add the lease into the correct array
+
+      // add the lease information to the search result object
+      let property_result: PropertySearchResult = properties[ownership.property_id];
+      property_result.lease_count += 1;
+
+      // get the landlord information
+      if (!landlords.has(ownership.landlord_id)) {
+        let landlord: DocumentType<Landlord> = await LandlordModel.findById(ownership.landlord_id) as DocumentType<Landlord>;
+        if (!landlord) continue;
+        
+        property_result.landlord_first_name = landlord.first_name;
+        property_result.landlord_last_name = landlord.last_name;
+        landlords.add(ownership.landlord_id);
+      }
+
+      // add the price_range
+      if (property_result.price_range.length < 2) {
+        property_result.price_range.push(all_active_leases[i].price_per_month);
+        property_result.price_range.sort();
+      }
       else {
-        ownerships[lease.ownership_id].leases.push(lease);
+        // set min price
+        if (all_active_leases[i].price_per_month < property_result.price_range[0]) 
+          property_result.price_range[0] = all_active_leases[i].price_per_month;
+
+        // set max price
+        if (all_active_leases[i].price_per_month > property_result.price_range[1]) 
+          property_result.price_range[1] = all_active_leases[i].price_per_month;
       }
 
-    });
-
-    type LeasePropertyData = {
-      property_promise: Promise<Property | undefined>,
-      leases: Lease[]
-    };
-    // resolve all the ownership queries and find their properties
-    let ownership_keys = Object.keys(ownerships);
-    let properties: {[key: string]: LeasePropertyData} = {};
-
-    for (let i = 0; i < ownership_keys.length; ++i) {
-
-      let ownership_data: LeaseOwnershipData = ownerships[ownership_keys[i]];
-      let ownership_: Ownership | undefined = await ownership_data.ownership_promise;
-
-      if (ownership_ != undefined 
-        && !Object.prototype.hasOwnProperty.call(properties, ownership_.property_id)) {
-          
-          // now with the ownership document, query for the property document
-          // and pass on the lease information to the property
-          let prop_id: string = ownership_.property_id;
-          let prom: Promise<Property | undefined> = new Promise((resolve, reject) => {
-            PropertyModel.findById(prop_id, (err: any, property: DocumentType<Property> | null) => {
-
-              if (err || property == null) resolve (undefined);
-              else resolve(property);
-            });
-          });
-
-          let property_lease_data: LeasePropertyData = {
-            property_promise: prom,
-            leases: ownership_data.leases
-          };
-
-           properties[ownership_.property_id] = property_lease_data;
+      // add the property and landlord rating aggregates
+      for (let k = 0; k < all_active_leases[i].lease_history.length; ++k) {
+        if (all_active_leases[i].lease_history[k].review_of_landlord != undefined) {
+          rating_counts[property_result.property._id].landlord_rating_count += 1;
+          property_result.landlord_rating_avg += all_active_leases[i].lease_history[k].review_of_landlord!.rating;
+        }
+        if (all_active_leases[i].lease_history[k].review_of_property != undefined) {
+          rating_counts[property_result.property._id].property_rating_count += 1;
+          property_result.property_rating_avg += all_active_leases[i].lease_history[k].review_of_property!.rating;
+        }
       }
 
     }
 
-    // finally, resolve all the properties queried and attach their leases
-    // to their respective objects.
+    // finalize the average aggregates
+    for (let i = 0; i < Object.keys(properties).length; ++i) {
+      let res: PropertySearchResult = properties[Object.keys(properties)[i]];
+      let rating_info: RatingCountInfo = rating_counts[Object.keys(properties)[i]];
+      if (rating_info.landlord_rating_count > 0) 
+        res.landlord_rating_avg = res.landlord_rating_avg / rating_info.landlord_rating_count;
+      if (rating_info.property_rating_count > 0)
+        res.property_rating_avg = res.property_rating_avg / rating_info.property_rating_count;
 
-    let properties_keys = Object.keys(properties);
-    let all_properties: Property[] = [];
-
-    for (let i = 0; i < properties_keys.length; ++i) {
-
-      let property_data: LeasePropertyData = properties[properties_keys[i]];
-      let property_: Property | undefined = await property_data.property_promise;
-
-      if (property_ != undefined) {
-        property_.leases = property_data.leases;
-        all_properties.push(property_);
-      }
+      res.landlord_rating_count = rating_info.landlord_rating_count;
+      res.property_rating_count = rating_info.property_rating_count;
     }
 
     return {
       success: true,
       data: {
-        properties: all_properties
+        search_results: Object.keys(properties).map((key: string) => properties[key])
       }
     }
   }
@@ -274,7 +328,8 @@ export class PropertyResolver {
   @Query(() => PropertyListAPIResponse)
   async getPropertiesForLandlord(
     @Arg("landlord_id") landlord_id: string,
-    @Arg("status", type => String, {nullable: true}) status: StatusType
+    @Arg("with_leases", type => Boolean, {nullable: true}) with_leases?: boolean,
+    @Arg("status", type => String, {nullable: true}) status?: StatusType
   ): Promise<PropertyListAPIResponse> {
 
     console.log(chalk.bgBlue(`👉 getPropertiesForLandlord()`))
@@ -286,12 +341,36 @@ export class PropertyResolver {
     }
 
     let ownerships: DocumentType<Ownership>[] = await OwnershipModel.find({landlord_id}) as DocumentType<Ownership>[]
-    let _properties: Promise<DocumentType<Property>>[] = ownerships
+    let property_leases: {[key: string]: DocumentQuery<DocumentType<Lease>[], DocumentType<Lease>, {}>} = {};
+    let _properties: Promise<DocumentType<Property> | null>[] = ownerships
       .filter((ownership: DocumentType<Ownership>) => status != null ? ownership.status == status : ownership.status == 'confirmed')
-      .map(async (ownership: DocumentType<Ownership>, i: number) => await PropertyModel.findById(ownership.property_id) as DocumentType<Property>)
+      .map(async (ownership: DocumentType<Ownership>) => {
+
+        // for each property, if we are querying leases too, add the lease query to the
+        // property_leases object.
+        if (with_leases) {
+          property_leases[ownership.property_id] = LeaseModel.find({
+            ownership_id: ownership._id
+          });
+        }
+
+        return PropertyModel.findById(ownership.property_id);
+      })
 
     let properties = []
-    for (let i = 0; i < _properties.length; ++i) properties.push(await _properties[i])
+    for (let i = 0; i < _properties.length; ++i) {
+
+      let prop: DocumentType<Property> | null = await _properties[i];
+      if (prop != null) {
+        // wait for the leases to finish resolving
+        if (with_leases && Object.prototype.hasOwnProperty.call(property_leases, prop._id)) {
+          let leases: DocumentType<Lease>[] = (await property_leases[prop._id]).filter((lease_: DocumentType<Lease>) => lease_ != null);
+          prop.leases = leases;
+        }
+
+        properties.push(prop);
+      }
+    }
 
     return {
       success: true,
@@ -337,6 +416,109 @@ export class PropertyResolver {
       });
     })
 
+  }
+
+  @Query(() => PropertySummaryAPIResponse)
+  async getPropertySummary(
+    @Arg("property_id") property_id: string,
+    @Arg("student_id") student_id: string
+  ): Promise<PropertySummaryAPIResponse>
+  {
+
+    if (!ObjectId.isValid(property_id)) {
+      return { success: false, error: "property does not exist." }
+    }
+    if (!ObjectId.isValid(student_id)) {
+      return { success: false, error: "student does not exist" }
+    }
+
+    let summary: PropertySummary = new PropertySummary();
+
+    // get the property information
+    let property_: DocumentType<Property> = await PropertyModel.findById(property_id) as DocumentType<Property>
+    if (property_ == undefined) {
+      return { success: false, error: "Property could not be found." }
+    }
+
+    // get the ownership information
+    let ownerships_: DocumentType<Ownership>[] = 
+      await OwnershipModel.find({property_id, status: 'confirmed'}) as DocumentType<Ownership>[];
+    
+    if (ownerships_ == undefined || ownerships_.length != 1) {
+      return { success: false, error: "Could not resolve the owner of this property" }
+    }
+
+    // get the landlord information
+    let landlord_: DocumentType<Landlord> = await LandlordModel.findById(ownerships_[0].landlord_id) as DocumentType<Landlord>
+    if (landlord_ == undefined) {
+      return { success: false, error: "No landlord found for this property's ownership" }
+    }
+
+    // get the lease information
+    let leases_: DocumentType<Lease>[] = await LeaseModel.find({ownership_id: ownerships_[0]._id}) as DocumentType<Lease>[]
+    
+    // filter out the inactive leases
+    leases_ = leases_.filter((lease_: Lease) => 
+      // only consider the leases that are active (on market) ...
+      lease_.active == true 
+      // and the leases that the student has not declined the lease agreement for
+      && !lease_.students_that_declined.map((p) => p.student_id).includes(student_id));
+
+    // get all of the leases that the student has currently accepted
+    let student: DocumentType<Student> = await StudentModel.findById(student_id) as DocumentType<Student>;
+    let accepted_leases: DocumentType<Lease>[] = [];
+    if (student.accepted_leases != null) {
+      // filter out the leases in the accepted_leases in the student document that are not in
+      // the array of leases for this property
+      let promises = student.accepted_leases
+        .map(y => y.lease_id)
+        .filter((lease_id: string) => !(leases_.map((lease: Lease) => lease._id)).includes(lease_id)  )
+        .map((lease_id: string) => LeaseModel.findById(lease_id))
+      for (let i = 0; i < promises.length; ++i) {
+        let res = await promises[i];
+        if (res != null) accepted_leases.push(res);
+      }
+    }
+
+    // leaseHasIntersection
+    // attach to the summary
+    summary.property = property_;
+    summary.landlord = landlord_;
+    summary.leases = leases_.map((lease: Lease) => {
+      
+      // determine if the student can lease out this property based on the time intersection
+      // of all their current leases
+      let able_to_lease: boolean = true;
+
+      // compare this lease's time frame b/w all the leases that the student has accepted.
+      // make sure they do not intersect
+      for (let i = 0; i < accepted_leases.length; ++i) {
+
+        // check against the lease history ...
+        if (!able_to_lease) break;
+        for (let j = 0; j < accepted_leases[i].lease_history.length; ++j) {
+          let history_ = accepted_leases[i].lease_history[j];
+          if (dateHasIntersection(
+            [new Date(lease.lease_availability_start_date!), new Date(lease.lease_availability_end_date!)],
+            [new Date(history_.start_date), new Date(history_.end_date)]
+          )) {
+            able_to_lease = false;
+            break;
+          }
+        }
+
+      }
+
+      return {
+        lease,
+        able_to_lease
+      }
+    })
+    
+    return {
+      success: true,
+      data: summary
+    }
   }
 
   @Mutation(() => PropertyAPIResponse)
@@ -498,4 +680,27 @@ export class PropertyResolver {
     console.log(chalk.bgYellow(`Property ${property_id} does not have image ${s3_key} in its details`))
     return {success: true, data: property_}
   }
+}
+
+export const dateHasIntersection = (d1: [Date, Date], d2: [Date, Date]): boolean => {
+  if (d1[0] < d2[0]) return !(d1[0] < d2[0] && d1[0] < d2[1] && d1[1] < d2[0] && d1[1] < d2[1]);
+  else return !(d2[0] < d1[0] && d2[0] < d1[1] && d2[1] < d1[0] && d2[1] < d1[1]);
+}
+
+/**
+ * Return true if lease1 and lease2 has any intersection
+ * @param lease1 
+ * @param lease2 
+ */
+export const leaseHasIntersection = (lease1: Lease, lease2: Lease): boolean => {
+  if (lease1.lease_availability_end_date == undefined || lease1.lease_availability_start_date == undefined)
+    return false;
+  if (lease2.lease_availability_start_date == undefined || lease2.lease_availability_end_date == undefined)
+    return false;
+
+  let a: [Date, Date] = [new Date(lease1.lease_availability_start_date), new Date(lease1.lease_availability_end_date)];
+  let b: [Date, Date] = [new Date(lease2.lease_availability_start_date), new Date(lease2.lease_availability_end_date)];
+
+  return dateHasIntersection(a, b);
+  // return !(a[0] < b[0] && a[0] < b[1] && a[1] < b[0] && a[1] < b[1]);
 }

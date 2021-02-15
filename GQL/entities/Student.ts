@@ -101,6 +101,76 @@ export class PropertyCollectionEntries{
   collection_entries: Partial<Property>[];
 }
 
+@ObjectType()
+export class NotificationAction {
+
+  @Field(type => String)
+  @prop({type: String})
+  action_text: string;
+
+  @Field(type => String)
+  @prop({type: String})
+  action_url: string;
+}
+
+@ObjectType()
+export class StudentNotification {
+
+  @Field(type => String)
+  @prop({type: String})
+  _id: string;
+
+  @Field(type => String)
+  @prop({type: String})
+  date_created: string;
+
+  // The date that the notification was seen.
+  // This is only set if the student has seen the notification
+  @Field(type => String, {nullable: true})
+  @prop({type: String})
+  date_seen?: string;
+
+  @Field(type => String)
+  @prop({type: String})
+  subject: string;
+
+  @Field(type => String)
+  @prop({type: String})
+  body: string;
+
+  @Field(type => NotificationAction, {nullable: true})
+  @prop({type: NotificationAction})
+  action?: NotificationAction;
+
+}
+
+@ObjectType()
+export class StudentNotificationCollection {
+
+  @Field(type => [StudentNotification])
+  @prop({type: [StudentNotification]})
+  notifications: StudentNotification[];
+}
+
+@ObjectType()
+export class StudentNotificationAPIResponse extends APIResult(StudentNotificationCollection) {}
+
+@ObjectType()
+export class AcceptedLeaseInfo {
+
+  // The id of the lease document that was accepted
+  // by the student
+  @Field(type => String)
+  @prop({type: String})
+  lease_id: string;
+
+  // The id of the lease history instance that the student has
+  // accepted.
+  @Field(type => String)
+  @prop({type: String})
+  history_id: string;
+}
+
 /**
  * Student
  * @desc The student object that describes a student
@@ -123,9 +193,9 @@ export class Student {
   @prop()
   email: String;
   
-  @Field()
+  @Field(type => String, {nullable: true})
   @prop()
-  phone_number: String;
+  phone_number?: String;
 
   @Field(type => CasAuthInfo, { nullable: true })
   @prop({ type: CasAuthInfo })
@@ -154,6 +224,16 @@ export class Student {
   @Field(type => SearchStatus, {nullable: true})
   @prop({type: SearchStatus})
   search_status?: SearchStatus;
+
+  @Field(type => [StudentNotification], {nullable: true})
+  @prop({type: [StudentNotification]})
+  notifications?: StudentNotification[];
+
+  // The array of leases the student has currently
+  // accepted (either current, or in the future)
+  @Field(type => [AcceptedLeaseInfo], {nullable: true})
+  @prop({type: [AcceptedLeaseInfo]})
+  accepted_leases: AcceptedLeaseInfo[];
 }
 
 @InputType()
@@ -190,3 +270,15 @@ export class StudentAPIResponse extends APIResult(Student) {}
 export class PropertyCollectionEntriesAPIResponse extends APIResult(PropertyCollectionEntries) {}
 
 export const StudentModel = getModelForClass(Student)
+
+///////////////////
+@ObjectType()
+class NumberValue {
+
+  @Field(type => Number)
+  @prop({type: Number})
+  value: number;
+}
+
+@ObjectType()
+export class NumberAPIResponse extends APIResult(NumberValue) {}

@@ -20,7 +20,7 @@ const PORT = process.env.SERVER_PORT;
 const MONGO_PREFIX = process.env.MONGO_DB_PREFIX ?? "mongodb+srv";
 const MONGO_HOST = process.env.MONGO_DB_HOST ?? "cluster0.vsneo.mongodb.net";
 const MONGO_URI = 
-  process.env.NODE_ENV == `development` ? `'mongodb://localhost:27017/housing-database` :
+  process.env.NODE_ENV == `development` ? `mongodb://localhost:27017/housing-database` :
 `${MONGO_PREFIX}://${process.env.MONGO_DB_CLUSTER_USERNAME}:${process.env.MONGO_DB_PASSWORD}@${MONGO_HOST}/housing-database?retryWrites=true&w=majority&authSource=admin`;
 
 // setup middleware

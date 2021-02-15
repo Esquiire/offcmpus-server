@@ -4,6 +4,7 @@ import {Student,
   StudentInput, 
   PropertyCollectionEntriesAPIResponse, 
   CollectionFetchInput, 
+  StudentNotificationAPIResponse,
   StudentModel, 
   PropertyCollectionEntries,
   SearchStatus} from '../entities/Student'
@@ -99,6 +100,91 @@ export class StudentResolver {
     return {
       success: true,
       data: entries
+    }
+  }
+
+  /**
+   * @desc get the notifications for the student with the
+   * specified student_id
+   * @param student_id The student to get the notificaions for
+   */
+  @Query(type => StudentNotificationAPIResponse)
+  async getStudentNotifications(
+    @Arg("student_id") student_id: string
+  ): Promise<StudentNotificationAPIResponse>
+  {
+
+    if (!ObjectId.isValid(student_id)) {
+      return {
+        success: false,
+        error: "Invalid id"
+      }
+    }
+
+    let student: DocumentType<Student> = await StudentModel.findById(student_id) as DocumentType<Student>;
+    if (!student) {
+      return {
+        success: false,
+        error: "Student not found"
+      }
+    }
+
+
+    return {
+      success: true,
+      data: {
+        notifications: student.notifications == undefined ? [] : student.notifications
+      }
+    }
+
+  }
+
+  /**
+   * Mark the notification with the given notification_id for the student as seen
+   * @param student_id 
+   * @param notification_id 
+   */
+  @Mutation(() => StudentNotificationAPIResponse)
+  async markStudentNotificationAsSeen(
+    @Arg("student_id") student_id: string,
+    @Arg("notification_id") notification_id: string
+  ): Promise<StudentNotificationAPIResponse>
+  {
+    
+    if (!ObjectId.isValid(student_id) || !ObjectId.isValid(notification_id)) {
+      return { success: false, error: "Invalid id" }
+    }
+
+    // find the student
+    let student: DocumentType<Student> = await StudentModel.findById(student_id) as DocumentType<Student>;
+    if (!student) {
+      return { success: false, error: "User not found" }
+    }
+
+    // find the notification with the notification id in the student
+    if (student.notifications) {
+      for (let i = 0; i < student.notifications.length; ++i) {
+        if (student.notifications[i]._id == notification_id) {
+          
+          // only mark it as seen if it was not previously seen
+          if (student.notifications[i].date_seen == undefined) {
+            student.notifications[i].date_seen = new Date().toISOString();
+          }
+
+          break;
+        }
+      }
+    } // end if
+
+    // save the student
+    student.save();
+
+    // return the updated student notifications
+    return {
+      success: true,
+      data: {
+        notifications: student.notifications ? student.notifications : []
+      }
     }
 
   }

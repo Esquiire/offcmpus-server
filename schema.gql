@@ -3,6 +3,11 @@
 # !!!   DO NOT MODIFY THIS FILE BY YOURSELF   !!!
 # -----------------------------------------------
 
+type AcceptedLeaseInfo {
+  history_id: String!
+  lease_id: String!
+}
+
 """Response from USPS Address Verify API"""
 type AddressVerification {
   address_1: String!
@@ -36,6 +41,22 @@ type ConfirmationActivity {
   message: String!
   user_id: String!
   user_type: String!
+}
+
+type DeclineInfo {
+  date: String!
+  student_id: String!
+}
+
+type Digit {
+  value: Float!
+}
+
+"""Represents a digit"""
+type DigitAPIResponse {
+  data: Digit
+  error: String
+  success: Boolean!
 }
 
 """The directions coordinates information"""
@@ -148,11 +169,19 @@ type Lease {
   lease_availability_end_date: String
   lease_availability_start_date: String
   lease_document_id: String
+  lease_history: [LeaseHistory!]!
   occupant_doc: Student
   occupant_id: String
   ownership_id: String!
   price_per_month: Float!
   priority: LeasePriority
+  student_interests: [StudentInterest!]!
+  students_that_declined: [DeclineInfo!]
+}
+
+type LeaseAndAvailability {
+  able_to_lease: Boolean!
+  lease: Lease!
 }
 
 """API Response class for the Lease object."""
@@ -189,11 +218,70 @@ type LeaseDocumentAPIResponse {
   success: Boolean!
 }
 
+"""Information about an instance of a lease's activation"""
+type LeaseHistory {
+  end_date: String!
+  price: Float!
+  property_images: [LeaseImageInfo!]!
+  review_of_landlord: ReviewAndResponse
+  review_of_property: ReviewAndResponse
+  start_date: String!
+  student_id: String!
+}
+
+type LeaseHistorySummary {
+  landlord: Landlord!
+  lease: Lease!
+  lease_history: LeaseHistory!
+  lease_history_id: String!
+  property: Property!
+  room_no: Int!
+}
+
+type LeaseHistorySummaryAPIResponse {
+  data: LeaseHistorySummary
+  error: String
+  success: Boolean!
+}
+
+type LeaseHistorySummaryCollection {
+  histories: [LeaseHistorySummary!]!
+}
+
+type LeaseHistorySummaryCollectionAPIResponse {
+  data: LeaseHistorySummaryCollection
+  error: String
+  success: Boolean!
+}
+
+"""Property Image info"""
+type LeaseImageInfo {
+  date_uploaded: String!
+  s3_key: String!
+}
+
 """Object model for the priority object for a lease"""
 type LeasePriority {
   end_date: String!
   level: Int!
   start_date: String!
+}
+
+"""Summary of lease information"""
+type LeaseSummary {
+  institutions: [Institution!]!
+  lease: Lease!
+  lease_doc: LeaseDocument
+  property: Property!
+  room_no: Int!
+  students: [Student!]!
+}
+
+"""API Response for lease summary"""
+type LeaseSummaryAPIResponse {
+  data: LeaseSummary
+  error: String
+  success: Boolean!
 }
 
 """Input for describing the creation of a lease"""
@@ -220,17 +308,24 @@ type MultipleLeaseDocumentsAPIResponse {
 }
 
 type Mutation {
+  acceptLeaseAgreement(lease_id: String!, student_id: String!): LeaseAPIResponse!
+  acceptOrDeclineStudentInterest(action: String!, lease_id: String!, student_id: String!): LeaseAPIResponse!
   activateLease(lease_document_id: String!, lease_end_date: String!, lease_id: String!, lease_start_date: String!, price_per_month: Float!): LeaseAPIResponse!
   addImagesToProperty(property_id: String!, s3_keys: [String!]!): PropertyAPIResponse!
+  addLeaseHistory(end_date: String!, lease_id: String!, start_date: String!, student_id: String!): LeaseAPIResponse!
   addNewLeaseDocument(document_keys: [String!]!, document_mimes: [String!]!, landlord_id: String!, lease_name: String!): LeaseDocumentAPIResponse!
   addOwnershipConfirmationActivity(date_submitted: String!, message: String!, ownership_id: String!, user_id: String!, user_type: String!): OwnershipAPIResponse!
   addOwnershipDocuments(documents_info: [OwnershipDocumentInput!]!, ownership_id: String!): OwnershipAPIResponse!
   addPropertyToStudentCollection(property_id: String!, student_id: String!): PropertyCollectionEntriesAPIResponse!
+  addReviewForLease(landlord_rating: Float!, landlord_review: String!, lease_id: String!, property_images: [String!]!, property_rating: Float!, property_review: String!, student_id: String!): LeaseAPIResponse!
   changeOwnershipStatus(new_status: String!, ownership_id: String!, status_changer_user_id: String!, status_changer_user_type: String!, with_landlord: Boolean!, with_property: Boolean!): OwnershipAPIResponse!
   confirmLandlordEmail(confirm_key: String!, email: String!): LandlordAPIResponse!
   confirmStudentEmail(confirm_key: String!, email: String!): StudentAPIResponse!
   createLandlord(new_landlord: LandlordInput!): LandlordAPIResponse!
   createOwnershipReview(address_line: String!, address_line_2: String!, city: String!, landlord_id: String!, state: String!, zip_code: String!): OwnershipAPIResponse!
+  declineLeaseAgreement(lease_id: String!, student_id: String!): LeaseAPIResponse!
+  expressInterest(lease_id: String!, student_id: String!): LeaseAPIResponse!
+  markStudentNotificationAsSeen(notification_id: String!, student_id: String!): StudentNotificationAPIResponse!
   removeImageFromProperty(property_id: String!, s3_key: String!): PropertyAPIResponse!
   removePropertyFromStudentCollection(property_id: String!, student_id: String!): PropertyCollectionEntriesAPIResponse!
   setLandlordOnboarded(landlord_id: String!): LandlordAPIResponse!
@@ -240,6 +335,21 @@ type Mutation {
   updateStudent(_id: String!, new_student: StudentInput!): StudentAPIResponse!
   updateStudentSearchStatus(id: String!, price_end: Float, price_start: Float, search_end: String, search_start: String, searching: Boolean!): StudentAPIResponse!
   updateUnoccupiedLeases(leases_info: [LeaseUpdateInput!]!, ownership_id: String!): LeaseCollectionAPIResponse!
+}
+
+type NotificationAction {
+  action_text: String!
+  action_url: String!
+}
+
+type NumberAPIResponse {
+  data: NumberValue
+  error: String
+  success: Boolean!
+}
+
+type NumberValue {
+  value: Float!
 }
 
 """Property Ownership Document Information"""
@@ -367,6 +477,40 @@ input PropertySearchInput {
   offset: Int
 }
 
+type PropertySearchResult {
+  landlord_first_name: String!
+  landlord_last_name: String!
+  landlord_rating_avg: Float!
+  landlord_rating_count: Int!
+  lease_count: Int!
+  price_range: [Int!]!
+  property: Property!
+  property_rating_avg: Float!
+  property_rating_count: Int!
+}
+
+type PropertySearchResultCollection {
+  search_results: [PropertySearchResult!]!
+}
+
+type PropertySearchResultCollectionAPIResult {
+  data: PropertySearchResultCollection
+  error: String
+  success: Boolean!
+}
+
+type PropertySummary {
+  landlord: Landlord!
+  leases: [LeaseAndAvailability!]!
+  property: Property!
+}
+
+type PropertySummaryAPIResponse {
+  data: PropertySummary
+  error: String
+  success: Boolean!
+}
+
 """Push Subscription Details"""
 type PushSubscription {
   endpoint: String!
@@ -380,26 +524,42 @@ type PushSubscriptionKeys {
 }
 
 type Query {
+  canAddReview(property_id: String!, student_id: String!): DigitAPIResponse!
+  checkEligibleForLeaseAgreement(lease_id: String!, student_id: String!): LeaseAPIResponse!
+  getAcceptedLeaseInfo(history_id: String!, lease_id: String!, student_id: String!): LeaseHistorySummaryAPIResponse!
+  getAcceptedLeases(student_id: String!): LeaseHistorySummaryCollectionAPIResponse!
   getFeedback(limit: Float!, offset: Float!): FeedbackCollectionAPIResponse!
   getInstitution(_id: String!): InstitutionAPIResponse!
   getLandlord(_id: String!): LandlordAPIResponse!
   getLeaseDocumentsForLandlord(landlord_id: String!): MultipleLeaseDocumentsAPIResponse!
   getLeasesAndOccupants(ownership_id: String!): LeaseCollectionAPIResponse!
+  getLeaseSummary(lease_id: String!): LeaseSummaryAPIResponse!
   getMatchingInstitutions(partial_name: String!): InstitutionListAPIResponse!
   getOwnership(_id: String!): OwnershipAPIResponse!
   getOwnershipConflicts(ownership_id: String!): OwnershipCollectionAPIResponse!
   getOwnershipForProperty(landlord_id: String!, property_id: String!): OwnershipAPIResponse!
   getOwnershipsForLandlord(landlord_id: String!, with_landlord: Boolean, with_properties: Boolean): OwnershipCollectionAPIResponse!
   getOwnershipsInReview: OwnershipCollectionAPIResponse!
-  getPropertiesForLandlord(landlord_id: String!, status: String): PropertyListAPIResponse!
+  getPropertiesForLandlord(landlord_id: String!, status: String, with_leases: Boolean): PropertyListAPIResponse!
   getProperty(_id: String!, reviewOptions: PropertyReviewInput!, withLandlord: Boolean!): PropertyAPIResponse!
-  getPropertyOwnedByLandlord(landlord_id: String!, property_id: String!): PropertyAPIResponse!
+  getPropertyForOwnership(ownership_id: String!): PropertyAPIResponse!
+  getPropertyOwnedByLandlord(landlord_id: String!, property_id: String!, with_leases: Boolean): PropertyAPIResponse!
+  getPropertySummary(property_id: String!, student_id: String!): PropertySummaryAPIResponse!
+  getRoomNo(lease_id: String!, ownership_id: String!): NumberAPIResponse!
   getStudent(_id: String!): StudentAPIResponse!
+  getStudentNotifications(student_id: String!): StudentNotificationAPIResponse!
   getStudentSavedCollection(_id: String!, collectionOptions: CollectionFetchInput!): PropertyCollectionEntriesAPIResponse!
   resendEamilConfirmation(landlord_id: String!): LandlordAPIResponse!
-  searchForProperties(distance: Float!, price_end: Float!, price_start: Float!, rooms: Int!): PropertyListAPIResponse!
+  searchForProperties(distance: Float!, price_end: Float!, price_start: Float!, rooms: Int!): PropertySearchResultCollectionAPIResult!
   searchProperties(searchOptions: PropertySearchInput!): PropertyListAPIResponse!
   verifyAddress(address_1: String!, address_2: String!, city: String!, state: String!, zip: String!): AddressVerificationAPIResponse!
+}
+
+"""Review & Response"""
+type ReviewAndResponse {
+  rating: Float!
+  response: String
+  review: String!
 }
 
 type S3Document {
@@ -430,13 +590,15 @@ type StatusChangeInfo {
 """Student model"""
 type Student {
   _id: ID!
+  accepted_leases: [AcceptedLeaseInfo!]
   auth_info: CasAuthInfo
   confirmation_key: [String!]
   elevated_privileges: [String!]
   email: String!
   first_name: String!
   last_name: String!
-  phone_number: String!
+  notifications: [StudentNotification!]
+  phone_number: String
   saved_collection: [String!]
   search_status: SearchStatus
   type: String
@@ -454,6 +616,32 @@ input StudentInput {
   email: String
   first_name: String
   last_name: String
+}
+
+"""Student interest object"""
+type StudentInterest {
+  accepted: Boolean
+  date: String!
+  student_id: String!
+}
+
+type StudentNotification {
+  _id: String!
+  action: NotificationAction
+  body: String!
+  date_created: String!
+  date_seen: String
+  subject: String!
+}
+
+type StudentNotificationAPIResponse {
+  data: StudentNotificationCollection
+  error: String
+  success: Boolean!
+}
+
+type StudentNotificationCollection {
+  notifications: [StudentNotification!]!
 }
 
 """Student User Settinhs"""
