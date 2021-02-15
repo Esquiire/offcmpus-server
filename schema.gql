@@ -132,6 +132,8 @@ type Landlord {
   confirmation_key: String
   email: String!
   first_name: String!
+  landlord_reset_key: String
+  landlord_reset_link_exp: String
   last_name: String!
   onboarded: Boolean
   password: String
@@ -328,6 +330,8 @@ type Mutation {
   markStudentNotificationAsSeen(notification_id: String!, student_id: String!): StudentNotificationAPIResponse!
   removeImageFromProperty(property_id: String!, s3_key: String!): PropertyAPIResponse!
   removePropertyFromStudentCollection(property_id: String!, student_id: String!): PropertyCollectionEntriesAPIResponse!
+  resetPassword(email: String!, new_password: String!, reset_key: String!): LandlordAPIResponse!
+  sendPasswordReset(email: String!): LandlordAPIResponse!
   setLandlordOnboarded(landlord_id: String!): LandlordAPIResponse!
   submitFeedback(message: String!, submitter_id: String!, tags: [String!]!, user_type: String!): FeedbackAPIResponse!
   updatePhoneNumber(landlord_id: String!, phone_number: String!): LandlordAPIResponse!
@@ -526,6 +530,7 @@ type PushSubscriptionKeys {
 type Query {
   canAddReview(property_id: String!, student_id: String!): DigitAPIResponse!
   checkEligibleForLeaseAgreement(lease_id: String!, student_id: String!): LeaseAPIResponse!
+  checkPasswordResetKey(email: String!, reset_key: String!): LandlordAPIResponse!
   getAcceptedLeaseInfo(history_id: String!, lease_id: String!, student_id: String!): LeaseHistorySummaryAPIResponse!
   getAcceptedLeases(student_id: String!): LeaseHistorySummaryCollectionAPIResponse!
   getFeedback(limit: Float!, offset: Float!): FeedbackCollectionAPIResponse!

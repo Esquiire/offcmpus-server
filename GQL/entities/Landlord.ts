@@ -86,6 +86,15 @@ export class Landlord {
   @Field(type => LandlordUserSettings, {nullable: true})
   @prop({type: LandlordUserSettings})
   user_settings?: LandlordUserSettings;
+
+  @Field(type => String, {nullable: true})
+  @prop({type: String})
+  landlord_reset_key?: string;
+
+  // The expiration date for any reset link given
+  @Field(type => String, {nullable: true})
+  @prop({type: String})
+  landlord_reset_link_exp?: string;
 }
 
 @InputType()

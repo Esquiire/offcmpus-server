@@ -82,6 +82,31 @@ export class LandlordResolver {
     }
   }
 
+  @Query(returns => LandlordAPIResponse)
+  async checkPasswordResetKey(
+    @Arg("reset_key") reset_key: string,
+    @Arg("email") email: string
+  ): Promise<LandlordAPIResponse>
+  {
+
+    // see if there is a landlord with the reset key and email on their document
+    let landlord: DocumentType<Landlord> = await LandlordModel.findOne({
+      landlord_reset_key: reset_key,
+      email: email
+    }) as DocumentType<Landlord>;
+
+    // no expireation date attached along with the reset key
+    if (landlord.landlord_reset_link_exp == undefined) return { success: false }
+
+    // check that the reset link has not expired
+    let exp: Date = new Date(landlord.landlord_reset_key as string);
+    if (new Date() > exp) return { success: false } // <- link has expired
+
+    if (!landlord) return { success: false }
+    return { success: true }
+
+  }
+
   /**
    * createLandlord()
    * @desc Create a landlord object with the given first_name, last_name, email, and
@@ -169,6 +194,87 @@ export class LandlordResolver {
       success: true,
       data: updated_landlord
     }
+
+  }
+
+  /**
+   * @desc Send the landlord a password reset link so they can
+   * reset their password information.
+   * @param email The email of the landlord's account
+   */
+  @Mutation(() => LandlordAPIResponse)
+  async sendPasswordReset(
+    @Arg("email") email: string
+  ): Promise<LandlordAPIResponse>
+  {
+    
+    // find the landlord with this email
+    let landlord: DocumentType<Landlord> = await LandlordModel.findOne({email: email}) as DocumentType<Landlord>;
+    if (!landlord) return {success: false, error: "No landlord found"}
+
+    // add password reset key
+    let key_: string = generateConfirmKey();
+    landlord.landlord_reset_key = key_;
+    // set the expiration-date for 24 hours
+    {
+      let exp: Date = new Date();
+      exp.setDate(exp.getDate() + 1);
+      landlord.landlord_reset_link_exp = exp.toString();
+    }
+    landlord.save();
+
+    SendGrid.sendMail({
+      to: landlord.email,
+      email_template_id: SendGridTemplate.LANDLORD_PASSWORD_RESET,
+      template_params: { 
+        first_name: landlord.first_name,
+        last_name: landlord.last_name,
+        frontend_url: frontendPath(),
+        reset_key: key_,
+        email_: landlord.email
+      }
+    })
+
+    return { success: true }
+
+  }
+
+  /**
+   * @desc Reset the password for the account with the given email and
+   * reset_key, with new_password.
+   * @param email 
+   * @param reset_key 
+   * @param new_pasword 
+   */
+  @Mutation(() => LandlordAPIResponse)
+  async resetPassword(
+    @Arg("email") email: string,
+    @Arg("reset_key") reset_key: string,
+    @Arg("new_password") new_password: string
+  ): Promise<LandlordAPIResponse>
+  {
+
+    // find the landlord with the email and reset key
+    let landlord: DocumentType<Landlord> = await LandlordModel.findOne({email: email, landlord_reset_key: reset_key}) as DocumentType<Landlord>;
+    if (!landlord) return { success: false, error: "No landlord found" }
+
+    // check if the link has expired
+    if (!landlord.landlord_reset_link_exp) return { success: false, error: "No link expiration date found" }
+    let exp: Date = new Date(landlord.landlord_reset_key as string);
+    
+    if (new Date() > exp) {
+      landlord.landlord_reset_key = undefined;
+      landlord.landlord_reset_link_exp = undefined;
+      landlord.save();
+
+      return { success: false, error: "Link has expired" }
+    }
+
+    // if here, the landlord's link is still active and they can successfully change their password
+    let hashed_password: string = bcrypt.hashSync(new_password, parseInt(process.env.SALT_ROUNDS as string))
+    landlord.password = hashed_password;
+    landlord.save();
+    return { success: true }
 
   }
 
