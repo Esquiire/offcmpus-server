@@ -184,6 +184,48 @@ export class PropertyList {
   properties: Property[]
 }
 
+@ObjectType()
+export class PropertySearchResult {
+
+  @Field(type => Property)
+  property: Property; //
+
+  @Field(type => String)
+  landlord_first_name: string; //
+
+  @Field(type => String)
+  landlord_last_name: string; //
+
+  @Field(type => [Int])
+  price_range: number[]; //
+
+  @Field(type => Int)
+  lease_count: number; //
+
+  @Field(type => Float)
+  landlord_rating_avg: number;
+
+  @Field(type => Int)
+  landlord_rating_count: number;
+
+  @Field(type => Float)
+  property_rating_avg: number;
+  @Field(type => Int)
+  property_rating_count: number
+}
+
+@ObjectType()
+export class PropertySearchResultCollection {
+  @Field(type => [PropertySearchResult])
+  search_results: PropertySearchResult[];
+}
+
+@ObjectType()
+export class PropertySearchResultAPIResult extends APIResult(PropertySearchResult) {}
+
+@ObjectType()
+export class PropertySearchResultCollectionAPIResult extends APIResult (PropertySearchResultCollection) {}
+
 @ObjectType({description: "Response from USPS Address Verify API"})
 export class AddressVerification {
 

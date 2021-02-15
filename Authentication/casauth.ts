@@ -81,7 +81,8 @@ function(profile: any, done: Function) {
               auth_info: {
                 cas_id: cas_id,
                 institution_id: institution_doc._id,
-              }
+              },
+              accepted_leases: []
             })
             initializeStudentSearchStatus(new_student);
 

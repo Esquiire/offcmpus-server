@@ -2,11 +2,15 @@ import {Resolver, Mutation, Arg, Args, Query} from 'type-graphql'
 import {DocumentType} from '@typegoose/typegoose'
 import {Lease, LeaseModel, LeaseUpdateInput, LeasePriority, ReviewAndResponse,
     StudentInterest, LeaseCollectionAPIResponse, LeaseAPIResponse, 
+    LeaseHistorySummaryAPIResponse, LeaseHistorySummaryCollection,
+    LeaseHistorySummaryCollectionAPIResponse,
+    LeaseHistorySummary,
     LeaseSummaryAPIResponse,
     DigitAPIResponse, LeaseHistory, LeaseSummary} from '../entities/Lease'
 import {Ownership, OwnershipModel} from '../entities/Ownership'
 import {Property, PropertyModel, getAddress} from '../entities/Property'
-import {Student, StudentModel} from '../entities/Student'
+import {leaseHasIntersection, dateHasIntersection} from './PropertyResolver'
+import {Student, StudentModel, AcceptedLeaseInfo, NumberAPIResponse} from '../entities/Student'
 import {Institution, InstitutionModel} from '../entities/Institution'
 import {Landlord, LandlordModel} from '../entities/Landlord'
 import {LeaseDocument, LeaseDocumentModel} from '../entities/LeaseDocument'
@@ -16,11 +20,90 @@ import SendGrid, {SendGridTemplate} from '../../vendors/SendGrid'
 import {NotificationsAPI} from '../../modules/NotificationsAPI'
 
 const ObjectId = mongoose.Types.ObjectId
+const util = require('util');
 type Query_<T> = DocumentQuery<DocumentType<T> | null, DocumentType<T>, {}>
 
 @Resolver()
 export class LeaseResolver {
  
+    /**
+     * @desc Determine whether the student with the
+     * given student_id can view the lease agreement for
+     * the given lease.
+     * 
+     * The lease must be on market (active) for it to be viewed.
+     * 
+     * @param lease_id The id of the lease to check
+     * @param student_id The student who to check for eligibility
+     */
+    @Query(returns => LeaseAPIResponse)
+    async checkEligibleForLeaseAgreement(
+        @Arg("lease_id") lease_id: string,
+        @Arg("student_id") student_id: string
+    ): Promise<LeaseAPIResponse>
+    {
+        if (!ObjectId.isValid(lease_id) || !ObjectId.isValid(student_id)) {
+            return { success: false, error: "Invalid id" };
+        }
+
+        let lease: DocumentType<Lease> = await LeaseModel.findOne({
+            _id: lease_id, // lease must exist
+            active: true // lease must be active (on market)
+        }) as DocumentType<Lease>;
+        if (!lease) {
+            return { success: false, error: "Lease not found" };
+        }
+
+        // check the lease
+        let eligible: boolean = false;
+        for (let i = 0; i < lease.student_interests.length; ++i) {
+            
+            // find the student interest that's for this student
+            if (lease.student_interests[i].student_id = student_id) {
+                if (lease.student_interests[i].accepted != undefined
+                && lease.student_interests[i].accepted == true) eligible = true;
+                break;
+            }
+        }
+
+        if (!eligible) return { success: false, error: "Restricted access" }
+        else return {
+            success: true,
+            data: lease
+        }
+    }
+
+
+    /**
+     * @desc Given the lease_id, return the room number that the
+     * of the lease for the property.
+     * @param ownership_id The ownership that corresponds to the property to get
+     * the room numbers of
+     * @param lease_id The lease to get the room number of
+     */
+    @Query(returns => NumberAPIResponse)
+    async getRoomNo (
+        @Arg("ownership_id") ownership_id: string,
+        @Arg("lease_id") lease_id: string
+    ): Promise<NumberAPIResponse>
+    {
+
+        if (!ObjectId.isValid(lease_id) || !ObjectId.isValid(ownership_id)) 
+            return {success: false, error: "Invalid id"};
+
+        let leases: DocumentType<Lease>[] = await LeaseModel.find({ownership_id}) as DocumentType<Lease>[];
+        let room_no = -1;
+        for (let i = 0; i < leases.length; ++i) {
+            if (leases[i]._id.toString() == lease_id.toString()) {
+                room_no = i + 1;
+                break;
+            }
+        }
+
+        if (room_no == -1) return {success: false, error: "Lease not fund"};
+        return {success: true, data: { value: room_no }}
+    }
+
     /**
      * Given an id to a ownership document, find all leases that correspond
      * to this document and their occupant student documents, if they are not null.
@@ -61,6 +144,140 @@ export class LeaseResolver {
         }
 
         return { success: true, data: {leases} }
+    }
+
+    /**
+     * Find the information about the lease accepted by the student
+     * for a particular property & room.
+     */
+    @Query(returns => LeaseHistorySummaryAPIResponse)
+    async getAcceptedLeaseInfo(
+        @Arg("student_id") student_id: string,
+        @Arg("lease_id") lease_id: string,
+        @Arg("history_id") history_id: string
+    ): Promise<LeaseHistorySummaryAPIResponse>
+    {
+
+        if (!ObjectId.isValid(student_id) || !ObjectId.isValid(lease_id) || !ObjectId.isValid(history_id)) 
+            return { success: false, error: "Invalid id" }
+
+        // 1. Check the student's document to make sure there is an entry for this 
+        // lease_id and history_id
+        let student: DocumentType<Student> = await StudentModel.findById(student_id) as DocumentType<Student>;
+        if (!student) return { success: false, error: "Student not found" }
+
+        let student_accept: AcceptedLeaseInfo[] = student.accepted_leases.filter(f => f.lease_id.toString() == lease_id.toString() && f.history_id.toString() == history_id.toString());
+        if (student_accept.length != 1) return { success: false, error: "Student and Lease have no relation" }
+
+        // 2. Now that we know that the student has some relation to the lease with the given lease_id and history_id,
+        // return the summary information for this lease
+        let summary: LeaseHistorySummary = new LeaseHistorySummary();
+        
+        // 2.a get the lease document 
+        let lease: DocumentType<Lease> = await LeaseModel.findById(lease_id) as DocumentType<Lease>;
+        if (!lease) return { success: false, error: "Lease not found" }
+        summary.lease = lease;
+
+        // 2.b find the lease history entry in the lease document
+        let lease_history: LeaseHistory | null = null;
+        for (let i = 0; i < lease.lease_history.length; ++i) {
+            if ( (lease.lease_history[i] as any)._id.toString() == history_id.toString() ) {
+                lease_history = lease.lease_history[i];
+                break;
+            }
+        }
+        if (lease_history == null) return { success: false, error: "Lease history does not exist" };
+        summary.lease_history = lease_history;
+
+        // 2.c get the property for the lease. Requires that the ownership for the property is retrieved
+        let ownership: DocumentType<Ownership> = await OwnershipModel.findById(lease.ownership_id) as DocumentType<Ownership>;
+        if (!ownership) return { success: false, error: "Ownership not found" }
+        let property: DocumentType<Property> = await PropertyModel.findById(ownership.property_id) as DocumentType<Property>;
+        summary.property = property; 
+
+        // 3. Get the room number
+        summary.room_no = await getRoomNumberForLease(ownership._id, lease._id);
+
+        // 4. Get the landlord for th lease
+        let landlord: DocumentType<Landlord> = await LandlordModel.findById(ownership.landlord_id) as DocumentType<Landlord>;
+        if (!landlord) return { success: false, error: "Landlord nto found" }
+        summary.landlord = landlord;
+
+        // 5. Add the history id
+        summary.lease_history_id = history_id;
+
+        return {
+            success: true,
+            data: summary
+        }
+    }
+
+    /**
+     * Find all leases that a student has accepted from the landlord
+     * and the information about the property it is associated with, the
+     * landlord who owns the property, and the lease history entry associated
+     * with the lease agreement.
+     * @param student_id 
+     */
+    @Query(returns => LeaseHistorySummaryCollectionAPIResponse)
+    async getAcceptedLeases(
+        @Arg("student_id") student_id: string
+    ): Promise<LeaseHistorySummaryCollectionAPIResponse>
+    {
+        
+        if (!ObjectId.isValid(student_id)) 
+            return { success: false, error: "Invalid id" }
+
+        let student: DocumentType<Student> = await StudentModel.findById(student_id) as DocumentType<Student>;
+        if (!student) return { success: false, error: "Student not found" }
+
+        let leases: DocumentType<Lease>[] = [];
+        let histories: LeaseHistory[] = [];
+        let history_ids: string[] = [];
+        for (let i = 0; i < student.accepted_leases.length; ++i) {
+            let l_: DocumentType<Lease> = await LeaseModel.findById(student.accepted_leases[i].lease_id) as DocumentType<Lease>;
+            if (l_ == undefined) continue;
+
+            let history: LeaseHistory[] = l_.lease_history.filter((h: any) => h._id == student.accepted_leases[i].history_id);
+            if (history.length != 1) continue;
+
+            history_ids.push(student.accepted_leases[i].history_id);
+            leases.push(l_);
+            histories.push(history[0]);
+        }
+
+        let summaries: LeaseHistorySummary[] = [];
+        let landlords: {[key: string]: DocumentType<Landlord>} = {};
+        for (let i = 0; i < leases.length; ++i) {
+            let ownership: DocumentType<Ownership> = await OwnershipModel.findById(leases[i].ownership_id) as DocumentType<Ownership>;
+            if (ownership == undefined) continue;
+            let property: DocumentType<Property> = await PropertyModel.findById(ownership.property_id) as DocumentType<Property>;
+            if (property == undefined) continue;
+
+            if (!Object.prototype.hasOwnProperty.call(landlords, ownership.landlord_id)) {
+                let landlord: DocumentType<Landlord> = await LandlordModel.findById(ownership.landlord_id) as DocumentType<Landlord>;
+                if (landlord != null) landlords[ownership.landlord_id] = landlord;
+            }
+
+            // the landlord does not exist ...
+            if (landlords[ownership.landlord_id] == undefined) continue;
+
+            summaries.push({
+                landlord: landlords[ownership.landlord_id],
+                lease: leases[i],
+                property: property,
+                lease_history: histories[i],
+                room_no: await getRoomNumberForLease(ownership._id, leases[i]._id),
+                lease_history_id: history_ids[i]
+            })
+        }
+
+        return { 
+            success: true, 
+            data: {
+                histories: summaries
+            } 
+        }
     }
 
     /**
@@ -527,6 +744,19 @@ export class LeaseResolver {
             }
         }
 
+        // If the student is already leasing this property, do not allow to express interest
+        if (student_.accepted_leases) {
+            for (let i = 0; i < student_.accepted_leases.length; ++i) {
+                if (student_.accepted_leases[i].toString() == lease_id.toString()) {
+                    
+                    return {
+                        success: false,
+                        error: "Student already on lease"
+                    }
+                }
+            }
+        }
+
         // we want to find all leases such that it contains a lease history with this student.
         // this is so that we can make sure that the student is not expressing interest for a lease
         // in a time frame that intersects with their active lease.
@@ -646,6 +876,251 @@ export class LeaseResolver {
             data: lease_
         }
 
+    }
+
+    @Mutation(returns => LeaseAPIResponse)
+    async acceptLeaseAgreement (
+        @Arg("student_id") student_id: string, 
+        @Arg("lease_id") lease_id: string
+    ): Promise<LeaseAPIResponse>
+    {
+
+        if (!ObjectId.isValid(lease_id) || !ObjectId.isValid(student_id)) 
+            return { success: false, error: "Invalid ids" };
+        
+        // get the lease
+        let lease: DocumentType<Lease> = await LeaseModel.findById(lease_id) as DocumentType<Lease>;
+        if (!lease) return { success: false, error: "Lease not found" }
+
+        // if the lease is not active, or it has an external occupant, they cannot accept the lease agreement
+        if (!lease.active || lease.external_occupant) {
+            return { success: false, error: "Lease not available" }
+        }
+
+        // Useless check: We know that if the lease is active, there has to be a lease available start and end
+        // date set. This is just for further safety.
+        if (!lease.lease_availability_start_date || !lease.lease_availability_end_date) {
+            return { success: false, error: "n/a" }
+        }
+
+        // We can only accept students that are in the student_interest array
+        if ( !lease
+            // Check the array of student interests that have been accepted by the landlord
+            .student_interests.filter((interest) => interest.accepted == true)
+            // from the student interestes that have been accepted by the landlord, check if the
+            // student's id is in that array
+            .map((interest) => interest.student_id).includes(student_id) )
+            return { success: false, error: "Student interest has not been accepted by the landlord" }
+
+        // get the student
+        let student: DocumentType<Student> = await StudentModel.findById(student_id) as DocumentType<Student>;
+        if (!student) return { success: false, error: "Student not found" }
+
+        // 1. If the student already has this lease and for an overlapping time, then decline
+        // if (student.accepted_leases.includes(lease_id))
+        //     return { success: false, error: "Cannot lease" }
+        let accepted: AcceptedLeaseInfo[] = student.accepted_leases.filter((k) => k.lease_id = lease_id);
+        for (let p = 0; p < accepted.length; ++p) {
+            let lease_: DocumentType<Lease> = await LeaseModel.findById(accepted[p].lease_id) as DocumentType<Lease>;
+            let history_: LeaseHistory[] = lease_.lease_history.filter((d: any) => d._id == accepted[p].lease_id);
+            if (history_.length != 0) {
+
+                // check if this lease history intersects with the lease's time ...
+                if (dateHasIntersection(
+                    [new Date(history_[0].start_date), new Date(history_[0].end_date)],
+                    [new Date(lease.lease_availability_start_date), new Date(lease.lease_availability_end_date)]
+                )) {
+                    return { success: false, error: "Intersection with already active lease" }
+                }
+
+            }
+        } // end for
+
+        // 2. check that the student has no accepted leases
+        // which intersect with this lease
+        for (let i = 0; i < student.accepted_leases.length; ++i) {
+            let l_: DocumentType<Lease> = await LeaseModel.findById(student.accepted_leases[i]) as DocumentType<Lease>;
+            if (l_ != null) {
+
+                if (leaseHasIntersection(l_, lease)) {
+                    return {
+                        success: false,
+                        error: "Lease intersects with already active lease"
+                    }
+                }
+            }
+        } // end for
+
+        // 3. Double check to make sure the most recent LeaseHistory does not intersect with 
+        // this lease's lease availibility
+        for (let i = 0; i < lease.lease_history.length; ++i) {
+            if (dateHasIntersection(
+                [new Date(lease.lease_history[i].start_date), new Date(lease.lease_history[i].end_date)], 
+                [new Date(lease.lease_availability_start_date), new Date(lease.lease_availability_end_date)]
+            )) {
+
+                // if there is an intersection with the lease history date and the lease's availble date,
+                // we cannot sign them.
+                // This check should not be necessary bc we should not allow the landlord to create a lease
+                // for a time period that conflicts with current leasers, so again, this is for safety.
+                return {
+                    success: false,
+                    error: "Lease availibility conflict"
+                }
+            }
+        }
+
+        // at this point, the student should be able to accept the lease.
+        ///// 1. Add them to the lease document as occupant_id,
+        // ^--- only update occupant_id when their lease becomes active (1st day of lease)
+        // 2. add the lease reference to the student's document,
+        // 3. reset the lease's status (active = false, price & available dates = null)
+        // 4. Add the student to the lease_history.
+        // 5. Remove the student from the student_interests
+
+        let old_history = lease.lease_history.map((l_: any) => l_._id);
+        lease.lease_history.push({
+            price: lease.price_per_month,
+            student_id,
+            start_date: lease.lease_availability_start_date,
+            end_date: lease.lease_availability_end_date,
+            property_images: []
+        });
+
+        lease.active = false;
+        lease.price_per_month = 0;
+        lease.lease_availability_end_date = undefined;
+        lease.lease_availability_start_date = undefined;
+
+        lease.student_interests = lease.student_interests.filter((interest) => interest.student_id != student_id);
+        lease.save ((err: any, saved_lease: any) => {
+            // find the id of the new lease history added to the lease
+            let new_history = lease.lease_history.map((l_: any) => l_._id);
+            
+            // find the id that is in the new_history, but not in the old_history
+            let history_id: string | undefined = undefined;
+            for (let i = 0; i < new_history.length; ++i) {
+                if (!old_history.includes(new_history[i])) {
+                    history_id = new_history[i];
+                    break;
+                }
+            }
+
+            console.log(`lease_id: `, lease_id);
+            console.log(`history_id: `, history_id);
+
+            if (history_id != undefined) {
+                console.log(`Saving student!`);
+                let accepted_lease_info: AcceptedLeaseInfo = new AcceptedLeaseInfo();
+                accepted_lease_info.lease_id = lease_id;
+                accepted_lease_info.history_id = history_id;
+                
+                student.accepted_leases.push(accepted_lease_info);
+                student.save({}, (err: any, doc) => {
+                    console.log(`Saved document:`);
+                    console.log(util.inspect(doc, false, null, true))
+                });
+            }
+            
+            console.log(`New history id: ${history_id}`)
+            // add a notification
+            OwnershipModel.findById(lease.ownership_id, (err: any, ownership: DocumentType<Ownership>) => {
+                if (!err && ownership) {
+                    PropertyModel.findById(ownership.property_id, (err: any, property: DocumentType<Property>) => {
+                        if (!err && property) {
+
+                            LandlordModel.findById(ownership.landlord_id, async (err: any, landlord: DocumentType<Landlord>) => {
+                                if (!err && landlord) {
+
+                                    NotificationsAPI.getSingleton().addStudentNotificationInformation({
+                                        subject: `You Accepted a Lease!`, 
+                                        body: `You have accepted the lease for the  property ${getAddress(property)}, Room #${await getRoomNumberForLease(ownership._id, lease._id)}. Make sure to get in touch with \
+                                        the landlord to get the key when your lease begins.`,
+                                        action: {
+                                            action_text: `More Info`,
+                                            action_url: `/student/lease/info/${lease._id}/${history_id}`
+                                        },
+                                        student_id
+                                    });
+
+                                }
+                            })
+
+                        }
+                    })
+
+                }
+            });
+        });
+
+        return {
+            success: true,
+            data: lease
+        }
+
+    }
+
+    @Mutation(returns => LeaseAPIResponse)
+    async declineLeaseAgreement (
+        @Arg("student_id") student_id: string, 
+        @Arg("lease_id") lease_id: string
+    ): Promise<LeaseAPIResponse>
+    {
+
+        if (!ObjectId.isValid(student_id) || !ObjectId.isValid(lease_id))
+            return { success: false, error: "Invalid id" }
+
+        // 1. get the lease
+        let lease: DocumentType<Lease> = await LeaseModel.findById(lease_id) as DocumentType<Lease>;
+        if (!lease) return { success: false, error: "Lease not found" }
+    
+        // 2. get the student
+        let student: DocumentType<Student> = await StudentModel.findById(student_id) as DocumentType<Student>;
+        if (!student) return { success: true, error: "Student not found" }
+
+        // 3. Remove the student from the student_interests
+        lease.student_interests = lease.student_interests.filter((interest) => interest.student_id != student_id)
+        
+        // 4. Add the student to the array of students that have declined the lease agreement
+        if (!lease.students_that_declined.map((i) => i.student_id).includes(student_id)) {
+            lease.students_that_declined.push({
+                student_id,
+                date: new Date().toISOString()
+            })
+        }
+
+        // 5. save the lease
+        lease.save();
+
+        // Add notification to the student stating that they have declined the lease agreement
+        OwnershipModel.findById(lease.ownership_id, (err: any, ownership: DocumentType<Ownership>) => {
+            if (!err && ownership) {
+                PropertyModel.findById(ownership.property_id, (err: any, property: DocumentType<Property>) => {
+                    if (!err && property) {
+
+                        LandlordModel.findById(ownership.landlord_id, async (err: any, landlord: DocumentType<Landlord>) => {
+                            if (!err && landlord) {
+                                NotificationsAPI.getSingleton().addStudentNotificationInformation({
+                                    subject: `You Declined a Lease`, 
+                                    body: `You have declined ${landlord.first_name} ${landlord.last_name}'s, lease for the  property ${getAddress(property)}, Room #${await getRoomNumberForLease(ownership._id, lease._id)}. Check out other properties that may interest you`,
+                                    action: {
+                                        action_text: "Find Leases",
+                                        action_url: '/search'
+                                    },
+                                    student_id
+                                });
+                            }
+                        })
+                    }
+                })
+            }
+        })
+
+        return { 
+            success: true,
+            data: lease
+        }
+    
     }
 
     @Mutation(returns => LeaseAPIResponse)
@@ -827,4 +1302,27 @@ export class LeaseResolver {
             }
 
     }
+}
+
+const getRoomNumberForLease = (ownership_id: string, lease_id: string): Promise<number> => {
+    return new Promise((resolve, reject) => {
+        
+        LeaseModel.find({ownership_id}, (err: any, leases: DocumentType<Lease>[]) => {
+            if (leases != undefined && !err) {
+                let room_no = -1;
+                for (let i = 0; i < leases.length; ++i) {
+                    if (leases[i]._id.toString() == lease_id) {
+                        room_no = i + 1;
+                        break;
+                    }
+                }
+                resolve(room_no);
+            }
+            else {
+                // problem querying. give -1 as room number
+                resolve(-1);
+            }
+        })
+
+    });
 }

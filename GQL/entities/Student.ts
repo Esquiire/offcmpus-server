@@ -155,6 +155,22 @@ export class StudentNotificationCollection {
 @ObjectType()
 export class StudentNotificationAPIResponse extends APIResult(StudentNotificationCollection) {}
 
+@ObjectType()
+export class AcceptedLeaseInfo {
+
+  // The id of the lease document that was accepted
+  // by the student
+  @Field(type => String)
+  @prop({type: String})
+  lease_id: string;
+
+  // The id of the lease history instance that the student has
+  // accepted.
+  @Field(type => String)
+  @prop({type: String})
+  history_id: string;
+}
+
 /**
  * Student
  * @desc The student object that describes a student
@@ -212,6 +228,12 @@ export class Student {
   @Field(type => [StudentNotification], {nullable: true})
   @prop({type: [StudentNotification]})
   notifications?: StudentNotification[];
+
+  // The array of leases the student has currently
+  // accepted (either current, or in the future)
+  @Field(type => [AcceptedLeaseInfo], {nullable: true})
+  @prop({type: [AcceptedLeaseInfo]})
+  accepted_leases: AcceptedLeaseInfo[];
 }
 
 @InputType()
@@ -248,3 +270,15 @@ export class StudentAPIResponse extends APIResult(Student) {}
 export class PropertyCollectionEntriesAPIResponse extends APIResult(PropertyCollectionEntries) {}
 
 export const StudentModel = getModelForClass(Student)
+
+///////////////////
+@ObjectType()
+class NumberValue {
+
+  @Field(type => Number)
+  @prop({type: Number})
+  value: number;
+}
+
+@ObjectType()
+export class NumberAPIResponse extends APIResult(NumberValue) {}

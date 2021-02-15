@@ -75,8 +75,15 @@ export class NotificationsAPI {
         let student: DocumentType<Student> = await StudentModel.findById(student_id) as DocumentType<Student>;
         if (!student) return;
 
+        let _id: mongoose.Types.ObjectId = mongoose.Types.ObjectId();
+        if (student.notifications != undefined) {
+            while (student.notifications.map((notif) => notif._id).includes( `${_id}` ))
+                _id = mongoose.Types.ObjectId();
+        }
+
         // create notifiction.
         let notif: StudentNotification = new StudentNotification();
+        notif._id = `${_id}`;
         notif.date_created = new Date().toISOString();
         notif.subject = subject;
         notif.body = body;

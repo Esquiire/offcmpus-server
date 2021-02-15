@@ -2,6 +2,7 @@ import { prop, getModelForClass } from "@typegoose/typegoose"
 import { Field, ObjectType, InputType, ID, Int, Float } from "type-graphql"
 import { Student } from './Student'
 import { Property } from './Property'
+import { Landlord } from './Landlord'
 import { Institution } from './Institution'
 import { LeaseDocument } from './LeaseDocument'
 import {APIResult} from "."
@@ -117,6 +118,41 @@ export class LeaseHistory {
     property_images: LeaseImageInfo[];
 }
 
+@ObjectType()
+export class LeaseHistorySummary {
+    
+    @Field(type => Property)
+    property: Property;
+
+    @Field(type => Lease)
+    lease: Lease;
+
+    @Field(type => Landlord)
+    landlord: Landlord;
+
+    @Field(type => LeaseHistory)
+    lease_history: LeaseHistory;
+
+    @Field(type => Int)
+    room_no: number;
+
+    @Field(type => String)
+    lease_history_id: string;
+}
+
+@ObjectType()
+export class LeaseHistorySummaryCollection {
+
+    @Field(type => [LeaseHistorySummary])
+    histories: LeaseHistorySummary[];
+}
+
+@ObjectType()
+export class LeaseHistorySummaryAPIResponse extends APIResult(LeaseHistorySummary) {}
+
+@ObjectType()
+export class LeaseHistorySummaryCollectionAPIResponse extends APIResult(LeaseHistorySummaryCollection) {}
+
 @ObjectType({description: "Object model for the priority object for a lease"})
 export class LeasePriority {
     
@@ -134,6 +170,18 @@ export class LeasePriority {
     @Field(type => String)
     @prop({type: String})
     end_date: string;
+}
+
+@ObjectType()
+class DeclineInfo {
+
+    @Field(() => String)
+    @prop({type: String})
+    date: string;
+
+    @Field(() => String)
+    @prop({type: String})
+    student_id: string;
 }
 
 @ObjectType({description: "Schema for the Lease document"})
@@ -209,6 +257,11 @@ export class Lease {
     @Field(type => [StudentInterest])
     @prop({type: [StudentInterest]})
     student_interests: StudentInterest[];
+
+    // The students that have declined the lease agreement
+    @Field(type => [DeclineInfo], {nullable: true})
+    @prop({type: [DeclineInfo]})
+    students_that_declined: DeclineInfo[];
 }
 
 @ObjectType({description: "Summary of lease information"})

@@ -5,6 +5,16 @@ import {Property} from '../Property'
 import {Landlord} from '../Landlord'
 import {Lease} from '../Lease'
 
+@ObjectType()
+export class LeaseAndAvailability {
+
+    @Field(type => Lease)
+    lease: Partial<Lease>;
+
+    @Field(type => Boolean)
+    able_to_lease: boolean;
+}
+
 /**
  * The PropertyInfo is meant to capture all the components that go into
  * describing the property to students, including the landlord that owns the
@@ -17,8 +27,8 @@ export class PropertySummary {
     @Field(type => Property)
     property: Partial<Property>;
 
-    @Field(type => [Lease])
-    leases: Partial<Lease>[];
+    @Field(type => [LeaseAndAvailability])
+    leases:LeaseAndAvailability[];
 
     @Field(type => Landlord)
     landlord: Partial<Landlord>;
