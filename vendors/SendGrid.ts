@@ -6,7 +6,8 @@ export const SendGridTemplate = {
   LANDLORD_EMAIL_CONFIRMATION: 'd-3604499171e342c598f9f2edd05c7246',
   STUDENT_EMAIL_CONFIRMATION: 'd-3923fca1fef44a07b94b1a44ad46b65d',
   NOTIFICATIONS: 'd-d100bb08aa964bd9b72b74e52475e989',
-  STUDENT_INTEREST_IN_LEASE: `d-1c6043b5565345789e5b49b2312675e8`
+  STUDENT_INTEREST_IN_LEASE: `d-1c6043b5565345789e5b49b2312675e8`,
+  LANDLORD_PASSWORD_RESET: `d-05f12f29288449b4a8386ac3c7dbfaff`
 }
 
 const _sendMail_ = (mail_data: MailDataRequired | MailDataRequired[]): Promise<[ClientResponse, {}]> => {
