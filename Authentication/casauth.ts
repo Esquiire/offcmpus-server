@@ -116,7 +116,7 @@ authRouter.get("/rpi/cas-auth", (req, res, next) => {
     if (err) {
       console.log(`An error occurred ...`)
       console.log(err);
-      res.redirect(`html://${process.env.FRONTEND_IP}:3000/student/login?err=Server+Error`)
+      res.redirect(`http://${process.env.FRONTEND_IP}:3000/student/login?err=Server+Error`)
     }
     else {
       req.logIn(user, (login_err) => {

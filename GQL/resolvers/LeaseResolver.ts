@@ -1123,6 +1123,23 @@ export class LeaseResolver {
     
     }
 
+    /**
+     * @desc Allow a landlord to response to a property review
+     * put on their property from a previous leaser.
+     */
+    @Mutation(returns => LeaseAPIResponse)
+    async addLandlordResponseToReview
+    (
+        @Arg("landlord_id") landlord_id: string,
+        @Arg("lease_id") lease_id: string,
+        @Arg("lease_history_id") lease_history_id: string,
+        @Arg("landlord_response") landlord_response: string
+    ): Promise<LeaseAPIResponse>
+    {
+
+        return {success: false};
+    }
+
     @Mutation(returns => LeaseAPIResponse)
     async addReviewForLease
     (

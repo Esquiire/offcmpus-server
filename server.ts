@@ -90,7 +90,9 @@ app.post('/subscribe/:user_type/:id', async (req, res) => {
   if (type_ == "student") {
     let student_: DocumentType<Student> = await StudentModel.findById(user_id) as DocumentType<Student>;
     if (student_) {
-      NotificationsAPI.getSingleton().addPushSubscription(student_, subscription);
+      NotificationsAPI.getSingleton().addPushSubscription(student_, subscription)
+
+
       res.json({ succes: true })
       return;
     }
@@ -104,6 +106,7 @@ app.post('/subscribe/:user_type/:id', async (req, res) => {
     let landlord_: DocumentType<Landlord> = await LandlordModel.findById(user_id) as DocumentType<Landlord>;
     if (landlord_) {
       NotificationsAPI.getSingleton().addPushSubscription(landlord_, subscription);
+
       res.json({ success: true });
       return;
     }
@@ -227,7 +230,7 @@ const StartServer = async (): Promise<{
     )
   }
 
-  const server = app.listen(PORT, () => {
+  const server = app.listen(PORT, async () => {
     console.log(`🚀 Server running on port ${PORT}`);
     
     new SubscriptionServer({
