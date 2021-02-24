@@ -217,7 +217,7 @@ export class PropertyResolver {
 
     let properties: {[key: string]: PropertySearchResult} = {};
     let ownerships: {[key: string]: Ownership} = {};
-    let landlords: Set<string> = new Set();
+    let landlords: {[key: string]: Landlord} = {};
 
     type RatingCountInfo = {
       landlord_rating_count: number,
@@ -259,14 +259,15 @@ export class PropertyResolver {
       property_result.lease_count += 1;
 
       // get the landlord information
-      if (!landlords.has(ownership.landlord_id)) {
+      if (!Object.prototype.hasOwnProperty.call(landlords, ownership.landlord_id)) {
         let landlord: DocumentType<Landlord> = await LandlordModel.findById(ownership.landlord_id) as DocumentType<Landlord>;
         if (!landlord) continue;
-        
-        property_result.landlord_first_name = landlord.first_name;
-        property_result.landlord_last_name = landlord.last_name;
-        landlords.add(ownership.landlord_id);
+        landlords[ownership.landlord_id] = landlord;
       }
+
+      // add the landlord info
+      property_result.landlord_first_name = landlords[ownership.landlord_id].first_name;
+      property_result.landlord_last_name = landlords[ownership.landlord_id].last_name;
 
       // add the price_range
       if (property_result.price_range.length < 2) {

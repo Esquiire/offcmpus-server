@@ -6,7 +6,6 @@
     "allowJs": true,
     "outDir": "build",
     "rootDir": ".",
-    "preLaunchTask": "rm -rf build && tsc",
     "strict": true,
     "sourceMap": true,
     "noImplicitAny": true,

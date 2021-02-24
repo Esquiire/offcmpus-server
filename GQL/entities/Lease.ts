@@ -81,6 +81,9 @@ export class LeaseImageInfo {
 @ObjectType({description: "Information about an instance of a lease's activation"})
 export class LeaseHistory {
 
+    @Field(type => String, {nullable: true})
+    _id?: string;
+
     // The price leased out for in USD
     @Field(type => Float)
     @prop({type: Number})
@@ -338,7 +341,7 @@ export class LeaseUpdateInput {
     lease_id: string;
 
     @Field(() => Float, {nullable: true})
-    @prop({type: Number})
+    @prop({type: Float})
     price_per_month?: number;
 
     @Field(() => Boolean, {nullable: true})

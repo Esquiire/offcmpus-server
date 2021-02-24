@@ -196,7 +196,7 @@ export class PropertySearchResult {
   @Field(type => String)
   landlord_last_name: string; //
 
-  @Field(type => [Int])
+  @Field(type => [Float])
   price_range: number[]; //
 
   @Field(type => Int)
