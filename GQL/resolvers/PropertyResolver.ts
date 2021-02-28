@@ -13,7 +13,7 @@ import {Property,
   PropertyImageInfo,
   PropertyDetails} from '../entities/Property'
 import {Student, StudentModel} from '../entities/Student'
-import {Lease, LeaseModel, createEmptyLease} from '../entities/Lease'
+import {Lease, LeaseModel, LeaseHistory, createEmptyLease} from '../entities/Lease'
 import {Landlord, LandlordModel} from '../entities/Landlord'
 import {Ownership, OwnershipModel, StatusType} from '../entities/Ownership'
 import {PropertySummary, PropertySummaryAPIResponse} from '../entities/auxillery/PropertySummary'
@@ -460,10 +460,26 @@ export class PropertyResolver {
     
     // filter out the inactive leases
     leases_ = leases_.filter((lease_: Lease) => 
+      lease_ != null
       // only consider the leases that are active (on market) ...
-      lease_.active == true 
+      && lease_.active == true 
       // and the leases that the student has not declined the lease agreement for
       && !lease_.students_that_declined.map((p) => p.student_id).includes(student_id));
+
+    // Active Lease Reivew Supression
+    // -----------------------------------------------------------------------
+    // for each of the leases, filter out the reviews for lease history that is
+    // currently active. We do not want to show the reviews that are from students
+    // that are currently leasing the property.
+    leases_.forEach((lease_: DocumentType<Lease>) => {
+      lease_.lease_history = lease_.lease_history.filter((history: LeaseHistory) => 
+        // only take the lease histories that
+        // (1) have a defined end date ...
+        history.end_date != null
+        // (2) and the defined end date was in the past
+        && new Date(history.end_date) < new Date()
+      );
+    });
 
     // get all of the leases that the student has currently accepted
     let student: DocumentType<Student> = await StudentModel.findById(student_id) as DocumentType<Student>;
