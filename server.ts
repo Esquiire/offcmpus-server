@@ -215,9 +215,15 @@ const StartServer = async (): Promise<{
   });
   const apolloServer = new ApolloServer({ 
     schema,
-    context: ({req, res}) => ({req, res}) 
+    context: ({req, res}) => ({
+      getSession: () => req.session,
+      req, res
+    }),
+    playground: 
+      process.env.NODE_ENV === 'production' ? false 
+      : { settings: { 'request.credentials': "same-origin" } }
   });
-  apolloServer.applyMiddleware({ app });
+  apolloServer.applyMiddleware({ app, cors: false });
   try {
     await connectMongo();
     console.log(`✔ Successfully connect to MongoDB instance.`);

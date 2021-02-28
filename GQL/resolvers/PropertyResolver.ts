@@ -1,4 +1,4 @@
-import {Resolver, Mutation, Arg, Query, Int} from 'type-graphql'
+import {Resolver, Mutation, Arg, Query, Int, Ctx} from 'type-graphql'
 import {Property, 
   PropertyAPIResponse, 
   PropertyModel, 
@@ -422,7 +422,8 @@ export class PropertyResolver {
   @Query(() => PropertySummaryAPIResponse)
   async getPropertySummary(
     @Arg("property_id") property_id: string,
-    @Arg("student_id") student_id: string
+    @Arg("student_id") student_id: string,
+    @Ctx() context: any
   ): Promise<PropertySummaryAPIResponse>
   {
 
