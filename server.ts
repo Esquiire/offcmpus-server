@@ -187,7 +187,8 @@ import {StudentResolver,
   InstitutionResolver,
   LeaseDocumentResolver,
   LeaseResolver,
-  PropertyResolver} from "./GQL/resolvers"
+  PropertyResolver,
+  FeedResolver} from "./GQL/resolvers"
 import { ObjectIdScalar } from "./GQL/entities";
 import {ObjectId} from 'mongodb'
 import webpush from 'web-push';
@@ -206,12 +207,16 @@ const StartServer = async (): Promise<{
       PropertyResolver,
       LeaseDocumentResolver,
       LeaseResolver,
-      FeedbackResolver],
+      FeedbackResolver, 
+      FeedResolver],
     emitSchemaFile: true,
     validate: true,
     scalarsMap: [{ type: ObjectId, scalar: ObjectIdScalar }],
   });
-  const apolloServer = new ApolloServer({ schema });
+  const apolloServer = new ApolloServer({ 
+    schema,
+    context: ({req, res}) => ({req, res}) 
+  });
   apolloServer.applyMiddleware({ app });
   try {
     await connectMongo();
