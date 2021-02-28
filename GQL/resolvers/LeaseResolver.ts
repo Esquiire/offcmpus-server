@@ -307,6 +307,19 @@ export class LeaseResolver {
             }
         }
 
+        // Active Lease Reivew Supression
+        // -----------------------------------------------------------------------
+        // Filter out the reviews for lease history that is currently active. 
+        // We do not want to show the reviews that are from students
+        // that are currently leasing the property.
+        lease_.lease_history = lease_.lease_history.filter((history: LeaseHistory) => 
+            // Keep the lease history documents that
+            // (1) Have a defined end date, and
+            history.end_date != null
+            // (2) the end date was in the past
+            && new Date() > new Date(history.end_date)
+        );
+
         // get the ownership
         let ownership: DocumentType<Ownership> = await OwnershipModel.findById(lease_.ownership_id) as DocumentType<Ownership>;
         if (ownership == undefined) {
@@ -349,6 +362,7 @@ export class LeaseResolver {
         if (lease_.lease_document_id) {
             let doc: DocumentType<LeaseDocument> = await LeaseDocumentModel.findById(lease_.lease_document_id) as DocumentType<LeaseDocument>;
             if (doc != undefined) {
+
                 summary.lease_doc = doc;
             }
         }
