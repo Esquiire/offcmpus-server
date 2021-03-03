@@ -47,13 +47,18 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // Passport CAS Auth
 import passport from "passport";
 import session from "express-session";
+import mongoStoreFactory from 'connect-mongo';
 import CasAuthRouter from "./Authentication/casauth";
 import LocalAuthRouter from "./Authentication/localauth";
+const MongoStore = mongoStoreFactory(session);
 app.use(
   session({
     secret: process.env.SESSION_SECRET as string,
     resave: false,
     saveUninitialized: false,
+    store: new MongoStore({
+      mongooseConnection: mongoose.connection
+    })
   })
 );
 app.use(passport.initialize());
