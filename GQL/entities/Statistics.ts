@@ -52,6 +52,17 @@ export class LoginDateTime {
     user_agent: string;
 }
 
+export class StudentAccountCreationStats {
+
+    @Field(type => String)
+    @prop({type: String})
+    date_time: string;
+
+    @Field(type => String)
+    @prop({type: String})
+    institution: string;
+}
+
 export class StudentStats {
 
     @Field(type => String)
@@ -60,6 +71,10 @@ export class StudentStats {
 
     @Field(type => String)
     _id: string;
+
+    @Field(type => StudentAccountCreationStats)
+    @prop({type: StudentAccountCreationStats})
+    creation: StudentAccountCreationStats;
 
     @Field(type => String)
     @prop({type: String})
@@ -82,6 +97,10 @@ export class LandlordStats {
 
     @Field(type => String)
     _id: string;
+
+    @Field(type => String)
+    @prop({type: String})
+    date_created: string;
 
     @Field(type => String)
     @prop({type: String})

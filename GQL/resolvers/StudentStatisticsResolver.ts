@@ -1,7 +1,12 @@
 import {Resolver, Mutation, Arg, ObjectType, Field} from 'type-graphql';
 import {StatsCollectionIDs, StudentStats, StudentStatsModel,
-    LandlordStats, LandlordStatsModel, LoginDateTime, STATS_API_VERSION} from '../entities/Statistics'
+    LandlordStats, LandlordStatsModel, LoginDateTime, STATS_API_VERSION,
+    StudentAccountCreationStats} from '../entities/Statistics'
+import {Student, StudentModel} from '../entities/Student'
+import {Institution, InstitutionModel} from '../entities/Institution'
 import {DocumentType} from "@typegoose/typegoose"
+import mongoose from 'mongoose'
+const ObjectId = mongoose.Types.ObjectId
 
 /**
  * Student Statistics API Resolvers
@@ -17,6 +22,52 @@ class StatsResponse {
 @Resolver()
 export class StudentStatisticsResolver {
 
+    /**
+     * @desc Create stats for this student and store the
+     * time/date + the insitution the student creted the account
+     * for.
+     * @param student_id 
+     */
+    @Mutation(() => StatsResponse)
+    async Stats_StudentAccountCreation (
+        @Arg("student_id") student_id: string
+    ): Promise<StatsResponse>
+    {
+
+        if (!ObjectId.isValid(student_id)) return { v: '0' };
+        // make sure their info is not already instiantiated
+        let new_student_info: DocumentType<StudentStats> | null = await StudentStatsModel.findOne({
+            stat_collection_id: StatsCollectionIDs.USER_STATS,
+            student_id,
+            user_type: 'student'
+        });
+
+        if (new_student_info != null) return { v: '0' };
+
+        // get the institution their account is associated with
+        let student_: DocumentType<Student> | null = await StudentModel.findById(student_id);
+        if (student_ == null) return { v: '0' };
+
+        let institution: DocumentType<Institution> | null = await InstitutionModel.findById(
+            student_.auth_info.institution_id
+        );
+        if (institution == null) return { v: '0' };
+
+        let creation_info = new StudentAccountCreationStats();
+        creation_info.date_time = new Date().toISOString();
+        creation_info.institution = institution.name;
+
+        new_student_info = new StudentStatsModel();
+        new_student_info.stat_collection_id = StatsCollectionIDs.USER_STATS;
+        new_student_info.student_id = student_id;
+        new_student_info.user_type = 'student';
+        new_student_info.creation = creation_info;
+
+        new_student_info.save();
+
+        return {v: STATS_API_VERSION};
+
+    }
 
     /**
      * @desc Log the times a student logs into the application
@@ -27,6 +78,8 @@ export class StudentStatisticsResolver {
         @Arg("student_id") student_id: string
     ): Promise<StatsResponse>
     {
+
+        if (!ObjectId.isValid(student_id)) return {v: '0'};
         
         let student_stats: DocumentType<StudentStats> | null = await StudentStatsModel.findOne({
             stat_collection_id: StatsCollectionIDs.USER_STATS,
@@ -36,11 +89,7 @@ export class StudentStatisticsResolver {
 
         // if the stats for the user do not exist, create the new document
         if (student_stats == null) {
-            student_stats = new StudentStatsModel();
-
-            student_stats.student_id = student_id;
-            student_stats.user_type = 'student';
-            student_stats.stat_collection_id = StatsCollectionIDs.USER_STATS;
+            return {v: '0'}
         }
 
         // add today to the list of dates logged in to the application
