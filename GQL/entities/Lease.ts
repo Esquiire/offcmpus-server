@@ -8,6 +8,7 @@ import { LeaseDocument } from './LeaseDocument'
 import {APIResult} from "."
 import { DocumentType } from "@typegoose/typegoose"
 import mongoose from 'mongoose'
+const ObjectId = mongoose.Types.ObjectId
 
 /**
  * Review & Response
@@ -383,4 +384,32 @@ export const createEmptyLease = async (
     lease_.external_occupant = false;
     lease_.price_per_month = 0;
     return lease_.save() as Promise<DocumentType<Lease>>;
+}
+
+/**
+ * @desc A lease has a promo active if any of the lease for the
+ * property that the selected lease is for has an active promo.
+ * (An active promo should apply to all rooms/leases for the
+ * same property)
+ * @param lease_id The id of the lease to check
+ * @returns null if the lease does not exist or if an invalid
+ * id is provided. Return true if there is an active promo and
+ * false otherwise. 
+ */
+export const hasPromo = async (lease_id: string): boolean | null => {
+
+    if (!ObjectId.isValid(lease_id)) return null;
+    
+    let lease: DocumentType<Lease> | null = await LeaseModel.findById(lease_id);
+    if (lease == null) return null;
+
+    // get all of the leases with the provided ownership id
+    let leases_for_property: DocumentType<Lease> [] = await LeaseModel.find({ ownership_id: lease.ownership_id });
+    leases_for_property = leases_for_property.filter(i => i != null);
+    
+    // a defined priority value == promo active.
+    for (let i = 0; i < leases_for_property.length; ++i) {
+        if (leases_for_property[i].priority != undefined) return true;
+    }
+    return false;
 }

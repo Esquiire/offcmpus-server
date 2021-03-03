@@ -1,6 +1,6 @@
 import {Resolver, Mutation, Arg, ObjectType, Field} from 'type-graphql';
 import {StatsCollectionIDs, StudentStats, StudentStatsModel,
-    LandlordStats, LandlordStatsModel} from '../entities/Statistics'
+    LandlordStats, LandlordStatsModel, LoginDateTime, STATS_API_VERSION} from '../entities/Statistics'
 import {DocumentType} from "@typegoose/typegoose"
 
 /**
@@ -48,10 +48,15 @@ export class StudentStatisticsResolver {
             student_stats.login_dates_and_times = [];
         }
 
-        student_stats.login_dates_and_times.push(new Date().toISOString());
+        let new_login_info = new LoginDateTime();
+        new_login_info.date_time = new Date().toISOString();
+        new_login_info.device_type = 'desktop';
+        new_login_info.user_agent = 'placeholder';
+
+        student_stats.login_dates_and_times.push(new_login_info);
         student_stats.save();
 
-        return { v: '0.0.1' }
+        return { v: STATS_API_VERSION }
     }
 
 };

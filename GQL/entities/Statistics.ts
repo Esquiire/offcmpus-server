@@ -9,10 +9,33 @@ import {APIResult} from "."
 import { DocumentType } from "@typegoose/typegoose"
 import mongoose from 'mongoose'
 
+export const STATS_API_VERSION = '0.0.1';
+
 export const StatsCollectionIDs = {
     USER_STATS: 'user_statistics_coll',
     LANDLORD_STATS: 'landlord_statistics_coll'
 };
+
+export class LeaseCreationStat {
+
+    // the property id that the lease was created for
+    @Field(type => String)
+    @prop({type: String})
+    for_property: string;
+
+    // the lease_if that was created
+    @Field(type => String)
+    @prop({type: String})
+    for_lease: string;
+
+    @Field(type => Boolean)
+    @prop({type: Boolean})
+    has_active_promo: boolean;
+
+    @Field(type => String)
+    @prop({type: String})
+    date_time: string;
+}
 
 export class LoginDateTime {
 
@@ -70,7 +93,11 @@ export class LandlordStats {
 
     @Field(type => [LoginDateTime], {nullable: true})
     @prop({type: [LoginDateTime]})
-    login_dates_and_times?: LoginDateTime[]
+    login_dates_and_times?: LoginDateTime[];
+
+    @Field(type => [LeaseCreationStat], {nullable: true})
+    @prop({type: [LeaseCreationStat]})
+    lease_creations: LeaseCreationStat[];
 }
 
 export const StudentStatsModel = getModelForClass(StudentStats, {
