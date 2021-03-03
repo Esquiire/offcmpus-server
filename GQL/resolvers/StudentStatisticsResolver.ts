@@ -13,7 +13,7 @@ const ObjectId = mongoose.Types.ObjectId
  * 
  */
 @ObjectType()
-class StatsResponse { 
+export class StatsResponse { 
     // the version of the statistics api being used.
     @Field(type => String)
     v: string 

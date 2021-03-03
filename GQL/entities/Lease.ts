@@ -396,7 +396,7 @@ export const createEmptyLease = async (
  * id is provided. Return true if there is an active promo and
  * false otherwise. 
  */
-export const hasPromo = async (lease_id: string): boolean | null => {
+export const hasPromo = async (lease_id: string): Promise<boolean | null> => {
 
     if (!ObjectId.isValid(lease_id)) return null;
     

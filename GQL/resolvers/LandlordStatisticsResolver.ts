@@ -6,18 +6,8 @@ import {Landlord, LandlordModel} from '../entities/Landlord'
 import {DocumentType} from "@typegoose/typegoose"
 import mongoose from 'mongoose'
 import {hasPromo} from '../entities/Lease'
+import {StatsResponse} from './StudentStatisticsResolver'
 const ObjectId = mongoose.Types.ObjectId
-
-/**
- * Student Statistics API Resolvers
- * 
- */
-@ObjectType()
-class StatsResponse { 
-    // the version of the statistics api being used.
-    @Field(type => String)
-    v: string 
-}
 
 @Resolver()
 export class LandlordStatisticsResolver {
