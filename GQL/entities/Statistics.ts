@@ -100,6 +100,10 @@ export class LandlordStats {
 
     @Field(type => String)
     @prop({type: String})
+    creation: string;
+
+    @Field(type => String)
+    @prop({type: String})
     date_created: string;
 
     @Field(type => String)
