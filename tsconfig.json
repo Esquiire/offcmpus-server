@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es5",
     "module": "commonjs",
-    "lib": ["es6", "dom","ESNext.AsyncIterable"],
+    "lib": ["es6", "dom", "ESNext.AsyncIterable"],
     "allowJs": true,
     "outDir": "build",
     "rootDir": ".",
@@ -15,7 +15,5 @@
     "emitDecoratorMetadata": true,
     "strictPropertyInitialization": false
   },
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules", "test_data"]
 }

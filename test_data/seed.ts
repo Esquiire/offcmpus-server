@@ -76,6 +76,7 @@ const generateStudent = (): Student => {
   let _fname: string = faker.name.firstName();
   let _lname: string = faker.name.lastName();
   let mock_student: Student = {
+    accepted_leases: [],
     _id: {$oid: OIDFactory.generateObjectID('student')},
     first_name: _fname,
     last_name: _lname,

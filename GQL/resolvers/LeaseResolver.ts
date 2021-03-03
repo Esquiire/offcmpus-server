@@ -307,6 +307,19 @@ export class LeaseResolver {
             }
         }
 
+        // Active Lease Reivew Supression
+        // -----------------------------------------------------------------------
+        // Filter out the reviews for lease history that is currently active. 
+        // We do not want to show the reviews that are from students
+        // that are currently leasing the property.
+        lease_.lease_history = lease_.lease_history.filter((history: LeaseHistory) => 
+            // Keep the lease history documents that
+            // (1) Have a defined end date, and
+            history.end_date != null
+            // (2) the end date was in the past
+            && new Date() > new Date(history.end_date)
+        );
+
         // get the ownership
         let ownership: DocumentType<Ownership> = await OwnershipModel.findById(lease_.ownership_id) as DocumentType<Ownership>;
         if (ownership == undefined) {
@@ -349,6 +362,7 @@ export class LeaseResolver {
         if (lease_.lease_document_id) {
             let doc: DocumentType<LeaseDocument> = await LeaseDocumentModel.findById(lease_.lease_document_id) as DocumentType<LeaseDocument>;
             if (doc != undefined) {
+
                 summary.lease_doc = doc;
             }
         }
@@ -1060,6 +1074,54 @@ export class LeaseResolver {
 
     }
 
+    @Mutation (response => LeaseAPIResponse)
+    async addLandlordResponse(
+        @Arg("lease_id") lease_id: string,
+        @Arg("history_id") history_id: string,
+        @Arg("review_response") review_response: string,
+        @Arg("response_type") response_type: 'landlord' | 'property'
+    ): Promise<LeaseAPIResponse>
+    {
+
+        if (!ObjectId.isValid(lease_id) || !ObjectId.isValid(history_id))
+            return { success: false, error: "Invalid id" }
+
+        let lease: DocumentType<Lease> | null = await LeaseModel.findById(lease_id);
+        if (!lease) return { success: false, error: "No lease found" }
+
+        // find the history id
+        let found = false;
+        for (let i = 0;!found && i < lease.lease_history.length; ++i) {
+            if (lease.lease_history[i]._id == history_id) {
+
+                // can only add response if there is a review found.
+                if (response_type == 'landlord') {
+                    if (lease.lease_history[i].review_of_landlord == undefined) continue;
+                    else {
+                        lease.lease_history[i].review_of_landlord!.response = review_response;
+                        found = true;
+                    }
+                }
+                
+                if (response_type == 'property') {
+                    if (lease.lease_history[i].review_of_property == undefined) continue;
+                    else {
+                        lease.lease_history[i].review_of_property!.response = review_response;
+                        found = true;
+                    }
+                }
+
+            }
+        } // end for
+
+        if (found) {
+            lease.save();
+            return {success: true, data: lease }
+        }
+        else return { success: false, error: 'Lease history not found' }
+
+    }
+
     @Mutation(returns => LeaseAPIResponse)
     async declineLeaseAgreement (
         @Arg("student_id") student_id: string, 
@@ -1121,6 +1183,23 @@ export class LeaseResolver {
             data: lease
         }
     
+    }
+
+    /**
+     * @desc Allow a landlord to response to a property review
+     * put on their property from a previous leaser.
+     */
+    @Mutation(returns => LeaseAPIResponse)
+    async addLandlordResponseToReview
+    (
+        @Arg("landlord_id") landlord_id: string,
+        @Arg("lease_id") lease_id: string,
+        @Arg("lease_history_id") lease_history_id: string,
+        @Arg("landlord_response") landlord_response: string
+    ): Promise<LeaseAPIResponse>
+    {
+
+        return {success: false};
     }
 
     @Mutation(returns => LeaseAPIResponse)

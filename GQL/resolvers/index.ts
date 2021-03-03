@@ -6,7 +6,8 @@ import {OwnershipResolver} from './OwnershipResolver'
 import {FeedbackResolver} from './FeedbackResolver'
 import {LeaseResolver} from './LeaseResolver'
 import {LeaseDocumentResolver} from './LeaseDocumentResolver'
+import {FeedResolver} from './FeedResolver'
 
 export {LandlordResolver, LeaseResolver, FeedbackResolver, 
     InstitutionResolver, OwnershipResolver, StudentResolver, 
-    PropertyResolver, LeaseDocumentResolver}
+    PropertyResolver, LeaseDocumentResolver, FeedResolver}

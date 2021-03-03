@@ -90,7 +90,9 @@ app.post('/subscribe/:user_type/:id', async (req, res) => {
   if (type_ == "student") {
     let student_: DocumentType<Student> = await StudentModel.findById(user_id) as DocumentType<Student>;
     if (student_) {
-      NotificationsAPI.getSingleton().addPushSubscription(student_, subscription);
+      NotificationsAPI.getSingleton().addPushSubscription(student_, subscription)
+
+
       res.json({ succes: true })
       return;
     }
@@ -104,6 +106,7 @@ app.post('/subscribe/:user_type/:id', async (req, res) => {
     let landlord_: DocumentType<Landlord> = await LandlordModel.findById(user_id) as DocumentType<Landlord>;
     if (landlord_) {
       NotificationsAPI.getSingleton().addPushSubscription(landlord_, subscription);
+
       res.json({ success: true });
       return;
     }
@@ -184,7 +187,8 @@ import {StudentResolver,
   InstitutionResolver,
   LeaseDocumentResolver,
   LeaseResolver,
-  PropertyResolver} from "./GQL/resolvers"
+  PropertyResolver,
+  FeedResolver} from "./GQL/resolvers"
 import { ObjectIdScalar } from "./GQL/entities";
 import {ObjectId} from 'mongodb'
 import webpush from 'web-push';
@@ -203,13 +207,23 @@ const StartServer = async (): Promise<{
       PropertyResolver,
       LeaseDocumentResolver,
       LeaseResolver,
-      FeedbackResolver],
+      FeedbackResolver, 
+      FeedResolver],
     emitSchemaFile: true,
     validate: true,
     scalarsMap: [{ type: ObjectId, scalar: ObjectIdScalar }],
   });
-  const apolloServer = new ApolloServer({ schema });
-  apolloServer.applyMiddleware({ app });
+  const apolloServer = new ApolloServer({ 
+    schema,
+    context: ({req, res}) => ({
+      getSession: () => req.session,
+      req, res
+    }),
+    playground: 
+      process.env.NODE_ENV === 'production' ? false 
+      : { settings: { 'request.credentials': "same-origin" } }
+  });
+  apolloServer.applyMiddleware({ app, cors: false });
   try {
     await connectMongo();
     console.log(`✔ Successfully connect to MongoDB instance.`);
@@ -227,7 +241,7 @@ const StartServer = async (): Promise<{
     )
   }
 
-  const server = app.listen(PORT, () => {
+  const server = app.listen(PORT, async () => {
     console.log(`🚀 Server running on port ${PORT}`);
     
     new SubscriptionServer({

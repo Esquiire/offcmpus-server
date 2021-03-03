@@ -222,6 +222,7 @@ type LeaseDocumentAPIResponse {
 
 """Information about an instance of a lease's activation"""
 type LeaseHistory {
+  _id: String
   end_date: String!
   price: Float!
   property_images: [LeaseImageInfo!]!
@@ -314,6 +315,8 @@ type Mutation {
   acceptOrDeclineStudentInterest(action: String!, lease_id: String!, student_id: String!): LeaseAPIResponse!
   activateLease(lease_document_id: String!, lease_end_date: String!, lease_id: String!, lease_start_date: String!, price_per_month: Float!): LeaseAPIResponse!
   addImagesToProperty(property_id: String!, s3_keys: [String!]!): PropertyAPIResponse!
+  addLandlordResponse(history_id: String!, lease_id: String!, response_type: String!, review_response: String!): LeaseAPIResponse!
+  addLandlordResponseToReview(landlord_id: String!, landlord_response: String!, lease_history_id: String!, lease_id: String!): LeaseAPIResponse!
   addLeaseHistory(end_date: String!, lease_id: String!, start_date: String!, student_id: String!): LeaseAPIResponse!
   addNewLeaseDocument(document_keys: [String!]!, document_mimes: [String!]!, landlord_id: String!, lease_name: String!): LeaseDocumentAPIResponse!
   addOwnershipConfirmationActivity(date_submitted: String!, message: String!, ownership_id: String!, user_id: String!, user_type: String!): OwnershipAPIResponse!
@@ -487,7 +490,7 @@ type PropertySearchResult {
   landlord_rating_avg: Float!
   landlord_rating_count: Int!
   lease_count: Int!
-  price_range: [Int!]!
+  price_range: [Float!]!
   property: Property!
   property_rating_avg: Float!
   property_rating_count: Int!
