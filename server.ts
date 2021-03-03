@@ -238,4 +238,9 @@ const StartServer = async (): Promise<{
 const server = StartServer();
 
 
+const io = require("socket.io")(server);
+io.on('connection',(client:any) => {
+  console.log(client);
+})
+
 export { app, connectMongo, server, MONGO_URI };
