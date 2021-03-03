@@ -336,6 +336,7 @@ type Mutation {
   resetPassword(email: String!, new_password: String!, reset_key: String!): LandlordAPIResponse!
   sendPasswordReset(email: String!): LandlordAPIResponse!
   setLandlordOnboarded(landlord_id: String!): LandlordAPIResponse!
+  Stats_StudentLogin(student_id: String!): StatsResponse!
   submitFeedback(message: String!, submitter_id: String!, tags: [String!]!, user_type: String!): FeedbackAPIResponse!
   updatePhoneNumber(landlord_id: String!, phone_number: String!): LandlordAPIResponse!
   updatePropertyDetails(bathrooms: Int, description: String, furnished: Boolean, has_ac: Boolean, has_heater: Boolean, has_washer: Boolean, property_id: String!, rooms: Int, sq_ft: Int): PropertyAPIResponse!
@@ -583,6 +584,10 @@ type SearchStatus {
   search_end: String
   search_start: String
   searching: Boolean!
+}
+
+type StatsResponse {
+  v: String!
 }
 
 """Describes a status change in an ownership"""

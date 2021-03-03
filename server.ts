@@ -188,7 +188,9 @@ import {StudentResolver,
   LeaseDocumentResolver,
   LeaseResolver,
   PropertyResolver,
-  FeedResolver} from "./GQL/resolvers"
+  FeedResolver,
+  StudentStatisticsResolver,
+  LandlordStatisticsResolver} from "./GQL/resolvers"
 import { ObjectIdScalar } from "./GQL/entities";
 import {ObjectId} from 'mongodb'
 import webpush from 'web-push';
@@ -208,7 +210,9 @@ const StartServer = async (): Promise<{
       LeaseDocumentResolver,
       LeaseResolver,
       FeedbackResolver, 
-      FeedResolver],
+      FeedResolver,
+      StudentStatisticsResolver,
+      LandlordStatisticsResolver],
     emitSchemaFile: true,
     validate: true,
     scalarsMap: [{ type: ObjectId, scalar: ObjectIdScalar }],

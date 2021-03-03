@@ -7,7 +7,10 @@ import {FeedbackResolver} from './FeedbackResolver'
 import {LeaseResolver} from './LeaseResolver'
 import {LeaseDocumentResolver} from './LeaseDocumentResolver'
 import {FeedResolver} from './FeedResolver'
+import {StudentStatisticsResolver} from './StudentStatisticsResolver'
+import {LandlordStatisticsResolver} from './LandlordStatisticsResolver'
 
 export {LandlordResolver, LeaseResolver, FeedbackResolver, 
     InstitutionResolver, OwnershipResolver, StudentResolver, 
-    PropertyResolver, LeaseDocumentResolver, FeedResolver}
+    PropertyResolver, LeaseDocumentResolver, FeedResolver,
+    StudentStatisticsResolver, LandlordStatisticsResolver}
