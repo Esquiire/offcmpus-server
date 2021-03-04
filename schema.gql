@@ -336,9 +336,9 @@ type Mutation {
   resetPassword(email: String!, new_password: String!, reset_key: String!): LandlordAPIResponse!
   sendPasswordReset(email: String!): LandlordAPIResponse!
   setLandlordOnboarded(landlord_id: String!): LandlordAPIResponse!
-  Stats_LandlordAccountCreation(landlord_id: String!): StatsResponse!
-  Stats_LandlordLogin(landlord_id: String!): StatsResponse!
-  Stats_LandlordOpenLease(landlord_id: String!, lease_id: String!, property_id: String!): StatsResponse!
+  Stats_LandlordAccountCreation: StatsResponse!
+  Stats_LandlordLogin: StatsResponse!
+  Stats_LandlordOpenLease(lease_id: String!, property_id: String!): StatsResponse!
   Stats_StudentAccountCreation: StatsResponse!
   Stats_StudentLogin: StatsResponse!
   submitFeedback(message: String!, submitter_id: String!, tags: [String!]!, user_type: String!): FeedbackAPIResponse!

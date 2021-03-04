@@ -1,4 +1,4 @@
-import {Resolver, Mutation, Arg, ObjectType, Field} from 'type-graphql';
+import {Resolver, Ctx, Mutation, Arg, ObjectType, Field} from 'type-graphql';
 import {StatsCollectionIDs, StudentStats, StudentStatsModel,
     LandlordStats, LandlordStatsModel, LoginDateTime, LeaseCreationStat,
     STATS_API_VERSION} from '../entities/Statistics'
@@ -14,10 +14,11 @@ export class LandlordStatisticsResolver {
 
     @Mutation(() => StatsResponse)
     async Stats_LandlordAccountCreation (
-        @Arg("landlord_id") landlord_id: string
+        @Ctx() context: any
     ): Promise<StatsResponse>
     {
 
+        let landlord_id = context.req.user._id;
         if (!ObjectId.isValid(landlord_id)) return {v: '0'};
 
         // make sure the landlord exists
@@ -47,10 +48,11 @@ export class LandlordStatisticsResolver {
 
     @Mutation(() => StatsResponse)
     async Stats_LandlordLogin (
-        @Arg("landlord_id") landlord_id: string
+        @Ctx() context: any
     ): Promise<StatsResponse>
     {
         
+        let landlord_id = context.req.user._id;
         let landlord_stats: DocumentType<LandlordStats> | null = await LandlordStatsModel.findOne({
             stat_collection_id: StatsCollectionIDs.LANDLORD_STATS,
             landlord_id,
@@ -84,12 +86,13 @@ export class LandlordStatisticsResolver {
      */
     @Mutation(() => StatsResponse)
     async Stats_LandlordOpenLease (
-        @Arg("landlord_id") landlord_id: string,
         @Arg("property_id") property_id: string,
-        @Arg("lease_id") lease_id: string
+        @Arg("lease_id") lease_id: string,
+        @Ctx() context: any
     ): Promise<StatsResponse>
     {
 
+        let landlord_id = context.req.user._id;
         if (!ObjectId.isValid(landlord_id) || !ObjectId.isValid(property_id)
         || !ObjectId.isValid(lease_id))
             return { v: '0' };
