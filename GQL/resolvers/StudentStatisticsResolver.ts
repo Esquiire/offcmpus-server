@@ -1,4 +1,4 @@
-import {Resolver, Mutation, Arg, ObjectType, Field} from 'type-graphql';
+import {Resolver, Ctx, Mutation, Arg, ObjectType, Field} from 'type-graphql';
 import {StatsCollectionIDs, StudentStats, StudentStatsModel,
     LandlordStats, LandlordStatsModel, LoginDateTime, STATS_API_VERSION,
     StudentAccountCreationStats} from '../entities/Statistics'
@@ -30,9 +30,11 @@ export class StudentStatisticsResolver {
      */
     @Mutation(() => StatsResponse)
     async Stats_StudentAccountCreation (
-        @Arg("student_id") student_id: string
+        @Ctx() context: any
     ): Promise<StatsResponse>
     {
+
+        let student_id = context.req.user._id;
 
         if (!ObjectId.isValid(student_id)) return { v: '0' };
         // make sure their info is not already instiantiated
