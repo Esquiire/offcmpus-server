@@ -52,25 +52,10 @@ try:
         search = driver.find_element_by_id("btnSearch")
         search.click()
         time.sleep(1)
-        image = driver.find_element_by_id("pnlPhotoView").find_element_by_tag_name("a").get_attribute("href")
-        print(image)
-        image.click()
+        report = driver.find_element_by_id("btnReport")
+        report.click()
         time.sleep(2)
-        big_image = driver.find_element_by_tag_name("img").get_attribute("src")
-        response = requests.get(image_request, stream=True)
-        total_size_in_bytes= int(response.headers.get('content-length', 0))
-        block_size = 1024 #1 Kibibyte
-        progress_bar = tqdm(total=total_size_in_bytes, unit='iB', unit_scale=True)
-
-        image_path = "images/" + "1704_highland_ave"+".png"
-
-        with open(image_path, 'wb') as file:
-            for data in response.iter_content(block_size):
-                progress_bar.update(len(data))
-                file.write(data)
-        progress_bar.close()
-        if total_size_in_bytes != 0 and progress_bar.n != total_size_in_bytes:
-            print("ERROR, something went wrong")
+        #image = driver.find_element_by_id("pnlPhotoView").find_element_by_tag_name("a").get_attribute("href")
 except:
     print("page didn't load")
     driver.quit()
