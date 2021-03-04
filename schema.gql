@@ -334,6 +334,7 @@ type Mutation {
   removeImageFromProperty(property_id: String!, s3_key: String!): PropertyAPIResponse!
   removePropertyFromStudentCollection(property_id: String!, student_id: String!): PropertyCollectionEntriesAPIResponse!
   resetPassword(email: String!, new_password: String!, reset_key: String!): LandlordAPIResponse!
+  saveConveniencePreferences(preferences: [String!]!): StudentAPIResponse!
   sendPasswordReset(email: String!): LandlordAPIResponse!
   setLandlordOnboarded(landlord_id: String!): LandlordAPIResponse!
   Stats_LandlordAccountCreation: StatsResponse!
@@ -610,6 +611,8 @@ type Student {
   accepted_leases: [AcceptedLeaseInfo!]
   auth_info: CasAuthInfo
   confirmation_key: [String!]
+  conveinence_setup: Boolean
+  convenience_tags: [String!]
   elevated_privileges: [String!]
   email: String!
   first_name: String!

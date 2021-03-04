@@ -234,6 +234,17 @@ export class Student {
   @Field(type => [AcceptedLeaseInfo], {nullable: true})
   @prop({type: [AcceptedLeaseInfo]})
   accepted_leases: AcceptedLeaseInfo[];
+
+  // The list of tags that a student sets as
+  // conveniecne identifiers for property
+  // personalization
+  @Field(type => [String], {nullable: true})
+  @prop({type: [String]})
+  convenience_tags?: string[];
+
+  @Field(type => Boolean, {nullable: true})
+  @prop({type: Boolean})
+  conveinence_setup: boolean;
 }
 
 @InputType()

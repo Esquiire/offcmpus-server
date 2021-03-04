@@ -1,4 +1,4 @@
-import {Resolver, Mutation, Arg, Query} from 'type-graphql'
+import {Resolver, Ctx, Mutation, Arg, Query} from 'type-graphql'
 import {Student, 
   StudentAPIResponse, 
   StudentInput, 
@@ -137,6 +137,37 @@ export class StudentResolver {
       }
     }
 
+  }
+
+  @Mutation(type => StudentAPIResponse)
+  async saveConveniencePreferences(
+    @Arg("preferences", type => [String]) preferences: string[],
+    @Ctx() context: any
+  ): Promise<StudentAPIResponse>
+  {
+
+    if (!context || !context.req || !context.req.user) {
+      return { success: false, error: "User not auth" }
+    }
+    let student_id = context.req.user._id;
+    if (!ObjectId.isValid(student_id)) {
+      return { success: false, error: "Invalid user id" }
+    }
+
+    // get the student
+    let student: DocumentType<Student> | null = await StudentModel.findById(student_id);
+    if (student == null) {
+      return { success: false, error: "Student not found" }
+    }
+
+    if (!student.convenience_tags) 
+      student.convenience_tags = [];
+
+    student.convenience_tags = preferences;
+    student.conveinence_setup = true;
+    student.save();
+
+    return { success: true, data: student }
   }
 
   /**
