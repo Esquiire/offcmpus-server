@@ -77,10 +77,11 @@ export class StudentStatisticsResolver {
      */
     @Mutation(() => StatsResponse)
     async Stats_StudentLogin (
-        @Arg("student_id") student_id: string
+        @Ctx() context: any
     ): Promise<StatsResponse>
     {
 
+        let student_id = context.req.user._id;
         if (!ObjectId.isValid(student_id)) return {v: '0'};
         
         let student_stats: DocumentType<StudentStats> | null = await StudentStatsModel.findOne({

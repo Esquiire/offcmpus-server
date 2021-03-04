@@ -340,7 +340,7 @@ type Mutation {
   Stats_LandlordLogin(landlord_id: String!): StatsResponse!
   Stats_LandlordOpenLease(landlord_id: String!, lease_id: String!, property_id: String!): StatsResponse!
   Stats_StudentAccountCreation: StatsResponse!
-  Stats_StudentLogin(student_id: String!): StatsResponse!
+  Stats_StudentLogin: StatsResponse!
   submitFeedback(message: String!, submitter_id: String!, tags: [String!]!, user_type: String!): FeedbackAPIResponse!
   updatePhoneNumber(landlord_id: String!, phone_number: String!): LandlordAPIResponse!
   updatePropertyDetails(bathrooms: Int, description: String, furnished: Boolean, has_ac: Boolean, has_heater: Boolean, has_washer: Boolean, property_id: String!, rooms: Int, sq_ft: Int): PropertyAPIResponse!
