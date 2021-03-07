@@ -39,12 +39,36 @@ const students: Student[] = rawStudents.map((student: _Student_) => ({
   _id: convertOidToStr(student._id),
 }));
 
-const randomSample = <T>({of}:{of: T[]}): T => {
+/**
+ * @desc Return a random document from the generated set.
+ * If there are criterias passed for the data, the returned document
+ * must meet all the criterias
+ * @param param0 
+ */
+const randomSample = <T>({
+  of, criterias
+}:{
+  of: T[], criterias?: ((obj: T) => boolean)[]
+}): T => {
   if (of.length == 0) {
     console.error(`randomSample:: collection is empty.`);
     exit(0);
   }
-  return of[ Math.floor(Math.random() * of.length) ];
+  if (criterias == undefined) return of[ Math.floor(Math.random() * of.length) ];
+  else {
+    let data: T;
+
+    do {
+      data = of[ Math.floor(Math.random() * of.length) ];
+    } while( !meetsCriterias(data, criterias) );
+  }
+}
+
+const meetsCriterias = <T>(data: T, criterias: ((obj: T) => boolean)[]) => {
+  for (let i = 0; i < criterias.length; ++i) {
+    if (!criterias[i](data)) return false;
+  }
+  return true;
 }
 
 export { landlords, /*reviews,*/ properties, students, randomSample};

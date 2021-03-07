@@ -15,12 +15,13 @@ dotenv.config({ path: `.env.${process.env.NODE_ENV!.replace(" ", "")}` });
 
 import { frontendPath } from "./config";
 
-const PORT = process.env.SERVER_PORT;
+let PORT = process.env.SERVER_PORT;
+if (process.env.NODE_ENV == 'test') PORT = "9045";
 
 const MONGO_PREFIX = process.env.MONGO_DB_PREFIX ?? "mongodb+srv";
 const MONGO_HOST = process.env.MONGO_DB_HOST ?? "cluster0.vsneo.mongodb.net";
 const MONGO_URI = 
-  process.env.NODE_ENV == `development` ? `mongodb://localhost:27017/housing-database` :
+  process.env.NODE_ENV == `development` || process.env.NODE_ENV == `test` ? `mongodb://localhost:27017/housing-database` :
 `${MONGO_PREFIX}://${process.env.MONGO_DB_CLUSTER_USERNAME}:${process.env.MONGO_DB_PASSWORD}@${MONGO_HOST}/housing-database?retryWrites=true&w=majority&authSource=admin`;
 
 // setup middleware
