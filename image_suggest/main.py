@@ -6,7 +6,7 @@ load_dotenv()
 
 API_KEY = os.getenv("GCP_API")
 api_url = "https://maps.googleapis.com/maps/api/streetview?"
-size = "size=665x441"
+size = "size=568x500"
 inp_address = input("What address do you want: ")
 address = "&location=" + inp_address.replace(" ", "+")
 #print(API_KEY)
