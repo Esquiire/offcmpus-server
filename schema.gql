@@ -334,8 +334,14 @@ type Mutation {
   removeImageFromProperty(property_id: String!, s3_key: String!): PropertyAPIResponse!
   removePropertyFromStudentCollection(property_id: String!, student_id: String!): PropertyCollectionEntriesAPIResponse!
   resetPassword(email: String!, new_password: String!, reset_key: String!): LandlordAPIResponse!
+  saveConveniencePreferences(preferences: [String!]!): StudentAPIResponse!
   sendPasswordReset(email: String!): LandlordAPIResponse!
   setLandlordOnboarded(landlord_id: String!): LandlordAPIResponse!
+  Stats_LandlordAccountCreation: StatsResponse!
+  Stats_LandlordLogin: StatsResponse!
+  Stats_LandlordOpenLease(lease_id: String!, property_id: String!): StatsResponse!
+  Stats_StudentAccountCreation: StatsResponse!
+  Stats_StudentLogin: StatsResponse!
   submitFeedback(message: String!, submitter_id: String!, tags: [String!]!, user_type: String!): FeedbackAPIResponse!
   updatePhoneNumber(landlord_id: String!, phone_number: String!): LandlordAPIResponse!
   updatePropertyDetails(bathrooms: Int, description: String, furnished: Boolean, has_ac: Boolean, has_heater: Boolean, has_washer: Boolean, property_id: String!, rooms: Int, sq_ft: Int): PropertyAPIResponse!
@@ -585,6 +591,10 @@ type SearchStatus {
   searching: Boolean!
 }
 
+type StatsResponse {
+  v: String!
+}
+
 """Describes a status change in an ownership"""
 type StatusChangeInfo {
   changed_from: String!
@@ -601,6 +611,8 @@ type Student {
   accepted_leases: [AcceptedLeaseInfo!]
   auth_info: CasAuthInfo
   confirmation_key: [String!]
+  conveinence_setup: Boolean
+  convenience_tags: [String!]
   elevated_privileges: [String!]
   email: String!
   first_name: String!

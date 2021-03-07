@@ -176,6 +176,7 @@ export class PropertyResolver {
 
   }
 
+  // ! DEPRECIATED
   @Query(() => PropertyListAPIResponse)
   async searchProperties(
     @Arg("searchOptions") {offset, count}:PropertySearchInput

@@ -82,7 +82,9 @@ function(profile: any, done: Function) {
                 cas_id: cas_id,
                 institution_id: institution_doc._id,
               },
-              accepted_leases: []
+              accepted_leases: [],
+              convenience_tags: [],
+              conveinence_setup: false
             })
             initializeStudentSearchStatus(new_student);
 

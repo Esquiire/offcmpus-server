@@ -12,7 +12,6 @@ import {Landlord, LandlordAPIResponse} from '../GQL/entities/Landlord';
 
 const { expect } = chai;
 
-
 describe("🧪 getLandlord", () => {
   it("Retrieve the landlord data", async () => {
     const { query } = apolloServerTestClient;
