@@ -7,7 +7,9 @@ import {Student,
   StudentNotificationAPIResponse,
   StudentModel, 
   PropertyCollectionEntries,
+  initializeStudentSearchStatus,
   SearchStatus} from '../entities/Student'
+import {Institution, InstitutionModel} from '../entities/Institution'
 import {Property, PropertyModel} from '../entities/Property'
 import {DocumentType} from "@typegoose/typegoose"
 import mongoose from 'mongoose'
@@ -168,6 +170,57 @@ export class StudentResolver {
     student.save();
 
     return { success: true, data: student }
+  }
+
+  @Mutation(() => StudentAPIResponse)
+  async createStudent(
+    @Arg("first_name") first_name: string,
+    @Arg("last_name") last_name: string,
+    @Arg("email") email: string,
+    @Arg("preferred_email", {nullable: true}) preferred_email: string
+  ): Promise<StudentAPIResponse>
+  {
+
+    // check if the student exists
+    let new_student: DocumentType<Student> | null = await StudentModel.findOne({
+      '$or': [{email: email}, {student_info: preferred_email}]
+    });
+
+    if (new_student != null) {
+      return {success: false, error: "Student with this email already exists."};
+    }
+
+    // see if their email is an institution edu
+    let institution: DocumentType<Institution> | null = await emailToInstitution(email);
+    if (institution == null) {
+      return {success: false, error: "Not an institutional email."};
+    }
+
+    new_student = new StudentModel();
+    
+    new_student.first_name = first_name;
+    new_student.last_name = last_name;
+    new_student.email = preferred_email == undefined ? email : preferred_email;
+    new_student.edu_email = email; // save the edu email. May be the same as email.
+
+    new_student.saved_collection = [];
+    new_student.user_settings = {
+      recieve_email_notifications: true,
+      push_subscriptions: []
+    };
+    new_student.auth_info = {
+      institution_id: institution._id,
+      auth_type: 'local'
+    };
+    new_student.accepted_leases = [];
+    new_student.convenience_tags = [];
+    new_student.conveinence_setup = false;
+    initializeStudentSearchStatus(new_student);
+    new_student.save();
+
+    return {
+      success: true
+    };
   }
 
   /**
@@ -476,3 +529,23 @@ export class StudentResolver {
   }
   
 }
+
+const emailToInstitution = async (email: string): Promise<DocumentType<Institution> | null> => {
+
+  // find the last '@'
+  let ind = email.lastIndexOf('@');
+  if (ind == -1) return null;
+
+  let suffix = email.substring(ind + 1);
+  let institution: DocumentType<Institution> | null = await InstitutionModel.findOne({
+    edu_suffix: suffix
+  });
+
+  // institution does not exist ...
+  if (institution == null) return null;
+
+  return institution;
+
+}
+
+const has = (obj_: {[key: string]: any}, prop: string) => Object.prototype.hasOwnProperty.call(obj_, prop);

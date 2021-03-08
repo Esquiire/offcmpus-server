@@ -79,6 +79,7 @@ function(profile: any, done: Function) {
                 push_subscriptions: []
               },
               auth_info: {
+                auth_type: 'cas',
                 cas_id: cas_id,
                 institution_id: institution_doc._id,
               },
@@ -129,6 +130,9 @@ authRouter.get("/rpi/cas-auth", (req, res, next) => {
           <!DOCTYPE html>
           <head></head>
           <body>
+              {
+                result: success
+              }
               <script type="text/javascript">
                 window.onload = () => {
                   window.opener.postMessage({authSuccess: true}, "*");

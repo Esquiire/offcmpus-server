@@ -87,11 +87,17 @@ export const initializeStudentSettings = (student: Student) => {
 class CasAuthInfo {
   @Field(type => String, { nullable: true })
   @prop({type: String})
-  cas_id: String;
+  cas_id?: String;
   
   @Field(type => String, { nullable: true })
   @prop({type: String})
   institution_id: String;
+
+  // discern whether the authentication is through the
+  // cas login system or the local authentication.
+  @Field(type => String, { nullable: true })
+  @prop({type: String})
+  auth_type: 'cas' | 'local';
 }
 
 @ObjectType({description: "An array of collection entries"}) 
@@ -189,9 +195,13 @@ export class Student {
   @prop()
   last_name: String;
   
-  @Field()
+  @Field(type => String, {nullable: true})
   @prop()
   email: String;
+
+  @Field(type => String, {nullable: true})
+  @prop({type: String})
+  edu_email: String;
   
   @Field(type => String, {nullable: true})
   @prop()
