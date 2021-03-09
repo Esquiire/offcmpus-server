@@ -4,6 +4,7 @@ import {PushSubscription} from './Landlord'
 import {APIResult} from "."
 import {Property} from './Property'
 import {ObjectId} from 'mongodb'
+import {DocumentType} from "@typegoose/typegoose"
 
 /**
  * SearchStatus
@@ -311,3 +312,24 @@ class NumberValue {
 
 @ObjectType()
 export class NumberAPIResponse extends APIResult(NumberValue) {}
+
+// functions
+export const studentAccessRestricted = async (student_id: string): Promise<boolean> => {
+
+  let student: DocumentType<Student> | null = await StudentModel.findById(student_id);
+  
+  // student cannot be found ...
+  if (student == null) return true;
+
+  // if student already confirmed, they should not have access restricted
+  if (student.confirmation_key == undefined) return false;
+
+  // check the registered date. If it has been 24 hours since
+  // the registration date and they have not yet confirmed, restrict
+  // the access.
+  if (student.date_registered == undefined) return true;
+  let date_ = new Date(student.date_registered);
+  date_.setDate(date_.getDate() + 1);
+
+  return date_ < new Date();
+}

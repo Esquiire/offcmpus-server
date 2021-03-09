@@ -8,6 +8,7 @@ import {Student,
   StudentModel, 
   PropertyCollectionEntries,
   initializeStudentSearchStatus,
+  studentAccessRestricted,
   SearchStatus} from '../entities/Student'
 import {Institution, InstitutionModel} from '../entities/Institution'
 import {Property, PropertyModel} from '../entities/Property'
@@ -140,6 +141,24 @@ export class StudentResolver {
       }
     }
 
+  }
+
+  /**
+   * @desc Determine whether or not to restrict the access of a student.
+   * If the student has not confirmed their institution email within 24 hours, they
+   * should be restricted from using the app.
+   * @param context 
+   */
+  @Query(type => StudentAPIResponse)
+  async studentAccessShouldBeRestricted(
+    @Ctx() context: any
+  ): Promise<StudentAPIResponse>
+  {
+
+    if (!context.req.user) return {success: false};
+    let student_id = context.req.user._id;
+
+    return { success: await studentAccessRestricted(student_id) }
   }
 
   @Mutation(type => StudentAPIResponse)

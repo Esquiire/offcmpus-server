@@ -571,6 +571,7 @@ type Query {
   resendEamilConfirmation(landlord_id: String!): LandlordAPIResponse!
   searchForProperties(distance: Float!, price_end: Float!, price_start: Float!, rooms: Int!): PropertySearchResultCollectionAPIResult!
   searchProperties(searchOptions: PropertySearchInput!): PropertyListAPIResponse!
+  studentAccessShouldBeRestricted: StudentAPIResponse!
   verifyAddress(address_1: String!, address_2: String!, city: String!, state: String!, zip: String!): AddressVerificationAPIResponse!
 }
 
