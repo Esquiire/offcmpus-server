@@ -314,7 +314,7 @@ export class StudentResolver {
       }
     })
 
-    return { success: true }
+    return { success: true, error: student.email }
   }
 
   /**
