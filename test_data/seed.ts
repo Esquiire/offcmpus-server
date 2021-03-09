@@ -88,6 +88,7 @@ const generateStudent = (): Student => {
       push_subscriptions: []
     },
     auth_info: {
+      auth_type: 'local',
       institution_id: '',
       cas_id: `${_fname.replace(' ', '_')}_${_lname.replace(' ', '_')}`
     },
