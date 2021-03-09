@@ -245,6 +245,44 @@ export class StudentResolver {
   }
 
   /**
+   * Resend email confirmation to the currently logged in student
+   * if they have not yet been confirmed.
+   * @param context 
+   */
+  @Mutation(() => StudentAPIResponse)
+  async resendStudentEmailConfirmation(
+    @Ctx() context: any
+  ): Promise<StudentAPIResponse>
+  {
+    
+    if (!context.req.user) return {success: false, error: "Not logged in"};
+    let student_id = context.req.user._id;
+
+    let student: DocumentType<Student> | null = await StudentModel.findById(student_id);
+    if (student == null) return { success: false, error: "User does not exist" };
+
+    if (student.email == undefined || student.first_name == undefined || student.last_name == undefined)
+      return { success: false, error: "Student info not set" }
+
+    if (student.confirmation_key == undefined) 
+      return { success: false, error: "Student already confirmed" }
+
+    SendGrid.sendMail({
+      to: student.email.toString(),
+      email_template_id: SendGridTemplate.STUDENT_EMAIL_CONFIRMATION,
+      template_params: {
+        confirmation_key: student.confirmation_key,
+      frontend_url: frontendPath(),
+      email: student.email.toString(),
+      first_name: student.first_name.toString(),
+      last_name: student.last_name.toString()
+      }
+    })
+
+    return { success: true }
+  }
+
+  /**
    * Mark the notification with the given notification_id for the student as seen
    * @param student_id 
    * @param notification_id 

@@ -336,6 +336,7 @@ type Mutation {
   markStudentNotificationAsSeen(notification_id: String!, student_id: String!): StudentNotificationAPIResponse!
   removeImageFromProperty(property_id: String!, s3_key: String!): PropertyAPIResponse!
   removePropertyFromStudentCollection(property_id: String!, student_id: String!): PropertyCollectionEntriesAPIResponse!
+  resendEmailConfirmation: StudentAPIResponse!
   resetPassword(email: String!, new_password: String!, reset_key: String!): LandlordAPIResponse!
   saveConveniencePreferences(preferences: [String!]!): StudentAPIResponse!
   sendPasswordReset(email: String!): LandlordAPIResponse!
