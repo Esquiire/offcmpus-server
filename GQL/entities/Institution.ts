@@ -46,6 +46,10 @@ export class Institution {
   @Field(type => String, {nullable: true})
   @prop({type: String})
   s3_thumb_key: string;
+
+  @Field(type => String, {nullable: true})
+  @prop({type: String})
+  edu_suffix: string;
 }
 
 @ObjectType({description: "A collection of Institutions"})

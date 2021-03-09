@@ -25,6 +25,7 @@ type AddressVerificationAPIResponse {
 
 """Cas Auth Information"""
 type CasAuthInfo {
+  auth_type: String
   cas_id: String
   institution_id: String
 }
@@ -94,6 +95,7 @@ type FeedbackCollectionAPIResponse {
 """Institution Model"""
 type Institution {
   _id: ID!
+  edu_suffix: String
   location: InstitutionLocationInfo!
   name: String!
   s3_thumb_key: String
@@ -328,11 +330,13 @@ type Mutation {
   confirmStudentEmail(confirm_key: String!, email: String!): StudentAPIResponse!
   createLandlord(new_landlord: LandlordInput!): LandlordAPIResponse!
   createOwnershipReview(address_line: String!, address_line_2: String!, city: String!, landlord_id: String!, state: String!, zip_code: String!): OwnershipAPIResponse!
+  createStudent(email: String!, first_name: String!, last_name: String!, password: String!, preferred_email: String): StudentAPIResponse!
   declineLeaseAgreement(lease_id: String!, student_id: String!): LeaseAPIResponse!
   expressInterest(lease_id: String!, student_id: String!): LeaseAPIResponse!
   markStudentNotificationAsSeen(notification_id: String!, student_id: String!): StudentNotificationAPIResponse!
   removeImageFromProperty(property_id: String!, s3_key: String!): PropertyAPIResponse!
   removePropertyFromStudentCollection(property_id: String!, student_id: String!): PropertyCollectionEntriesAPIResponse!
+  resendStudentEmailConfirmation: StudentAPIResponse!
   resetPassword(email: String!, new_password: String!, reset_key: String!): LandlordAPIResponse!
   saveConveniencePreferences(preferences: [String!]!): StudentAPIResponse!
   sendPasswordReset(email: String!): LandlordAPIResponse!
@@ -342,6 +346,7 @@ type Mutation {
   Stats_LandlordOpenLease(lease_id: String!, property_id: String!): StatsResponse!
   Stats_StudentAccountCreation: StatsResponse!
   Stats_StudentLogin: StatsResponse!
+  studentEmailConfirmed: StudentAPIResponse!
   submitFeedback(message: String!, submitter_id: String!, tags: [String!]!, user_type: String!): FeedbackAPIResponse!
   updatePhoneNumber(landlord_id: String!, phone_number: String!): LandlordAPIResponse!
   updatePropertyDetails(bathrooms: Int, description: String, furnished: Boolean, has_ac: Boolean, has_heater: Boolean, has_washer: Boolean, property_id: String!, rooms: Int, sq_ft: Int): PropertyAPIResponse!
@@ -566,6 +571,7 @@ type Query {
   resendEamilConfirmation(landlord_id: String!): LandlordAPIResponse!
   searchForProperties(distance: Float!, price_end: Float!, price_start: Float!, rooms: Int!): PropertySearchResultCollectionAPIResult!
   searchProperties(searchOptions: PropertySearchInput!): PropertyListAPIResponse!
+  studentAccessShouldBeRestricted: StudentAPIResponse!
   verifyAddress(address_1: String!, address_2: String!, city: String!, state: String!, zip: String!): AddressVerificationAPIResponse!
 }
 
@@ -613,11 +619,14 @@ type Student {
   confirmation_key: [String!]
   conveinence_setup: Boolean
   convenience_tags: [String!]
+  date_registered: String
+  edu_email: String
   elevated_privileges: [String!]
-  email: String!
+  email: String
   first_name: String!
   last_name: String!
   notifications: [StudentNotification!]
+  password: String
   phone_number: String
   saved_collection: [String!]
   search_status: SearchStatus

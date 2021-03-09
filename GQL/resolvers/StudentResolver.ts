@@ -7,7 +7,10 @@ import {Student,
   StudentNotificationAPIResponse,
   StudentModel, 
   PropertyCollectionEntries,
+  initializeStudentSearchStatus,
+  studentAccessRestricted,
   SearchStatus} from '../entities/Student'
+import {Institution, InstitutionModel} from '../entities/Institution'
 import {Property, PropertyModel} from '../entities/Property'
 import {DocumentType} from "@typegoose/typegoose"
 import mongoose from 'mongoose'
@@ -16,6 +19,7 @@ const ObjectId = mongoose.Types.ObjectId
 import SendGrid, {SendGridTemplate} from '../../vendors/SendGrid'
 import {generateConfirmKey} from './LandlordResolver'
 import {frontendPath} from '../../config'
+import bcrypt from 'bcrypt'
 
 @Resolver()
 export class StudentResolver {
@@ -139,6 +143,24 @@ export class StudentResolver {
 
   }
 
+  /**
+   * @desc Determine whether or not to restrict the access of a student.
+   * If the student has not confirmed their institution email within 24 hours, they
+   * should be restricted from using the app.
+   * @param context 
+   */
+  @Query(type => StudentAPIResponse)
+  async studentAccessShouldBeRestricted(
+    @Ctx() context: any
+  ): Promise<StudentAPIResponse>
+  {
+
+    if (!context.req.user) return {success: false};
+    let student_id = context.req.user._id;
+
+    return { success: await studentAccessRestricted(student_id) }
+  }
+
   @Mutation(type => StudentAPIResponse)
   async saveConveniencePreferences(
     @Arg("preferences", type => [String]) preferences: string[],
@@ -168,6 +190,131 @@ export class StudentResolver {
     student.save();
 
     return { success: true, data: student }
+  }
+
+  @Mutation(() => StudentAPIResponse)
+  async createStudent(
+    @Arg("first_name") first_name: string,
+    @Arg("last_name") last_name: string,
+    @Arg("email") email: string,
+    @Arg("password") password: string,
+    @Arg("preferred_email", {nullable: true}) preferred_email: string
+  ): Promise<StudentAPIResponse>
+  {
+
+    // check if the student exists
+    let new_student: DocumentType<Student> | null = await StudentModel.findOne({
+      '$or': [{email: email}, {email: preferred_email}]
+    });
+
+    if (new_student != null) {
+      return {success: false, error: "Student with this email already exists."};
+    }
+
+    // see if their email is an institution edu
+    let institution: DocumentType<Institution> | null = await emailToInstitution(email);
+    if (institution == null) {
+      return {success: false, error: "Not an institutional email."};
+    }
+
+    new_student = new StudentModel();
+    
+    new_student.first_name = first_name;
+    new_student.date_registered = new Date().toISOString();
+    new_student.last_name = last_name;
+    new_student.email = preferred_email == undefined ? email : preferred_email;
+    new_student.edu_email = email; // save the edu email. May be the same as email.
+    new_student.password = bcrypt.hashSync(password, parseInt(process.env.SALT_ROUNDS as string));
+
+    new_student.saved_collection = [];
+    new_student.user_settings = {
+      recieve_email_notifications: true,
+      push_subscriptions: []
+    };
+    new_student.auth_info = {
+      institution_id: institution._id,
+      auth_type: 'local'
+    };
+    new_student.accepted_leases = [];
+    new_student.convenience_tags = [];
+    new_student.conveinence_setup = false;
+    initializeStudentSearchStatus(new_student);
+
+    let confirm_key = generateConfirmKey()
+    new_student.confirmation_key = generateConfirmKey();
+
+    new_student.save();
+
+    // Send email confirmation to the student
+    SendGrid.sendMail({
+      to: email.toString(),
+      email_template_id: SendGridTemplate.STUDENT_EMAIL_CONFIRMATION,
+      template_params: {
+        confirmation_key: confirm_key,
+      frontend_url: frontendPath(),
+      email: email.toString(),
+      first_name: new_student.first_name.toString(),
+      last_name: new_student.last_name.toString()
+      }
+    })
+
+    return {
+      success: true
+    };
+  }
+
+  @Mutation(() => StudentAPIResponse)
+  async studentEmailConfirmed (
+    @Ctx() context: any
+  ): Promise<StudentAPIResponse>
+  {
+    if (!context.req.user) return {success: false, error: "Not logged in"};
+    let student_id = context.req.user._id;
+
+    let student: DocumentType<Student> | null = await StudentModel.findById(student_id);
+    if (student == null) return { success: false, error: "User does not exist" }
+
+    if (student.confirmation_key == undefined) return { success: true }
+    else return { success: false }
+
+  }
+
+  /**
+   * Resend email confirmation to the currently logged in student
+   * if they have not yet been confirmed.
+   * @param context 
+   */
+  @Mutation(() => StudentAPIResponse)
+  async resendStudentEmailConfirmation(
+    @Ctx() context: any
+  ): Promise<StudentAPIResponse>
+  {
+    
+    if (!context.req.user) return {success: false, error: "Not logged in"};
+    let student_id = context.req.user._id;
+
+    let student: DocumentType<Student> | null = await StudentModel.findById(student_id);
+    if (student == null) return { success: false, error: "User does not exist" };
+
+    if (student.email == undefined || student.first_name == undefined || student.last_name == undefined)
+      return { success: false, error: "Student info not set" }
+
+    if (student.confirmation_key == undefined) 
+      return { success: false, error: "Student already confirmed" }
+
+    SendGrid.sendMail({
+      to: student.email.toString(),
+      email_template_id: SendGridTemplate.STUDENT_EMAIL_CONFIRMATION,
+      template_params: {
+        confirmation_key: student.confirmation_key,
+      frontend_url: frontendPath(),
+      email: student.email.toString(),
+      first_name: student.first_name.toString(),
+      last_name: student.last_name.toString()
+      }
+    })
+
+    return { success: true, error: student.email }
   }
 
   /**
@@ -398,7 +545,6 @@ export class StudentResolver {
    */
   @Mutation(() => StudentAPIResponse)
   async updateStudent(@Arg("_id") _id: string, @Arg("new_student"){first_name, last_name, email}: StudentInput): Promise<StudentAPIResponse> {
-    console.log(chalk.bgBlue(`👉 createStudent()`))
 
     let student_doc: DocumentType<Student> | null = await StudentModel.findById(_id)
     if (student_doc == null) {
@@ -476,3 +622,23 @@ export class StudentResolver {
   }
   
 }
+
+const emailToInstitution = async (email: string): Promise<DocumentType<Institution> | null> => {
+
+  // find the last '@'
+  let ind = email.lastIndexOf('@');
+  if (ind == -1) return null;
+
+  let suffix = email.substring(ind + 1);
+  let institution: DocumentType<Institution> | null = await InstitutionModel.findOne({
+    edu_suffix: suffix
+  });
+
+  // institution does not exist ...
+  if (institution == null) return null;
+
+  return institution;
+
+}
+
+const has = (obj_: {[key: string]: any}, prop: string) => Object.prototype.hasOwnProperty.call(obj_, prop);

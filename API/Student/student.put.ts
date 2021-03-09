@@ -1,9 +1,79 @@
 import express from 'express'
 import chalk from 'chalk'
 import Student, {IStudentDoc} from '../../schemas/student.schema'
+import {StudentModel, Student as StudentObj, initializeStudentSearchStatus} from '../../GQL/entities/Student'
+import {InstitutionModel, Institution} from '../../GQL/entities/Institution'
+import {DocumentType} from "@typegoose/typegoose"
 import _, { update } from 'lodash'
 
 const studentRouter = express.Router();
+
+const has = (obj_: {[key: string]: any}, prop: string) => Object.prototype.hasOwnProperty.call(obj_, prop);
+
+studentRouter.put('/students', async (req, res) => {
+
+  // create a new student object
+  let student_info = req.body;
+  if (student_info == undefined) {
+    res.json({success: false, error: "No body payload found"});
+    return;
+  }
+
+  // ================ BEGIN VALIDATIONS ================
+  if (!has(student_info, 'first_name')) {
+    res.json({success: false, error: "No first name"});
+    return;
+  }
+
+  if (!has(student_info, 'last_name')) {
+    res.json({success: false, error: "No last name"});
+    return;
+  }
+
+  if (!has(student_info, 'email')) {
+    res.json({success: false, error: "No email"});
+    return;
+  }
+  // ================ END VALIDATIONS ================
+
+  // check if the student exists
+  let new_student: DocumentType<StudentObj> | null = await StudentModel.findOne({
+    '$or': [{email: student_info.email}, {student_info: student_info.preferrerd_email}]
+  });
+
+  if (new_student != null) {
+    res.json({success: false, error: "Student with this email already exists."});
+    return;
+  }
+
+  // see if their email is an institution edu
+  let institution: DocumentType<Institution> | null = await emailToInstitution(student_info.email);
+  if (institution == null) {
+    res.json({success: false, error: "Not an institutional email."});
+    return;
+  }
+
+  new_student = new StudentModel();
+  new_student.saved_collection = [];
+  new_student.user_settings = {
+    recieve_email_notifications: true,
+    push_subscriptions: []
+  };
+  new_student.auth_info = {
+    institution_id: institution._id,
+    auth_type: 'local'
+  };
+  new_student.accepted_leases = [];
+  new_student.convenience_tags = [];
+  new_student.conveinence_setup = false;
+  initializeStudentSearchStatus(new_student);
+  new_student.save();
+
+  res.json({
+    success: true
+  });
+
+});
 
 studentRouter.put('/', (req, res) => {
   
@@ -137,5 +207,28 @@ studentRouter.put('/:id/', (req, res) => {
  })
 
 })
+
+/**
+ * @desc Given an email address, determine which institution this email is for.
+ * If the institution is not within our system, return null.
+ * @param email 
+ */
+const emailToInstitution = async (email: string): Promise<DocumentType<Institution> | null> => {
+
+  // find the last '@'
+  let ind = email.lastIndexOf('@');
+  if (ind == -1) return null;
+
+  let suffix = email.substring(ind + 1);
+  let institution: DocumentType<Institution> | null = await InstitutionModel.findOne({
+    edu_suffix: suffix
+  });
+
+  // institution does not exist ...
+  if (institution == null) return null;
+
+  return institution;
+
+}
 
 export default studentRouter
