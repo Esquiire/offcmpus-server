@@ -47,7 +47,7 @@ export class Institution {
   @prop({type: String})
   s3_thumb_key: string;
 
-  @Field(type => String)
+  @Field(type => String, {nullable: true})
   @prop({type: String})
   edu_suffix: string;
 }

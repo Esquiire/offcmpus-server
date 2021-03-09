@@ -197,11 +197,15 @@ export class Student {
   
   @Field(type => String, {nullable: true})
   @prop()
-  email: String;
+  email?: String;
 
   @Field(type => String, {nullable: true})
   @prop({type: String})
-  edu_email: String;
+  edu_email?: string;
+
+  @Field(type => String, {nullable: true})
+  @prop({type: String})
+  password?: string;
   
   @Field(type => String, {nullable: true})
   @prop()

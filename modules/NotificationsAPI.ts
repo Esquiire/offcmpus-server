@@ -119,6 +119,10 @@ export class NotificationsAPI {
                 }
             }
 
+            if (user_.email == undefined) {
+                return;
+            }
+
             // send email notifications
             if (options.sendEmailNotifiation) {
                 SendGrid.sendMail({

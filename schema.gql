@@ -95,7 +95,7 @@ type FeedbackCollectionAPIResponse {
 """Institution Model"""
 type Institution {
   _id: ID!
-  edu_suffix: String!
+  edu_suffix: String
   location: InstitutionLocationInfo!
   name: String!
   s3_thumb_key: String
@@ -330,7 +330,7 @@ type Mutation {
   confirmStudentEmail(confirm_key: String!, email: String!): StudentAPIResponse!
   createLandlord(new_landlord: LandlordInput!): LandlordAPIResponse!
   createOwnershipReview(address_line: String!, address_line_2: String!, city: String!, landlord_id: String!, state: String!, zip_code: String!): OwnershipAPIResponse!
-  createStudent(email: String!, first_name: String!, last_name: String!, preferred_email: String): StudentAPIResponse!
+  createStudent(email: String!, first_name: String!, last_name: String!, password: String!, preferred_email: String): StudentAPIResponse!
   declineLeaseAgreement(lease_id: String!, student_id: String!): LeaseAPIResponse!
   expressInterest(lease_id: String!, student_id: String!): LeaseAPIResponse!
   markStudentNotificationAsSeen(notification_id: String!, student_id: String!): StudentNotificationAPIResponse!
@@ -622,6 +622,7 @@ type Student {
   first_name: String!
   last_name: String!
   notifications: [StudentNotification!]
+  password: String
   phone_number: String
   saved_collection: [String!]
   search_status: SearchStatus

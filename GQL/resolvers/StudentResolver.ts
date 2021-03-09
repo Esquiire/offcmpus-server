@@ -18,6 +18,7 @@ const ObjectId = mongoose.Types.ObjectId
 import SendGrid, {SendGridTemplate} from '../../vendors/SendGrid'
 import {generateConfirmKey} from './LandlordResolver'
 import {frontendPath} from '../../config'
+import bcrypt from 'bcrypt'
 
 @Resolver()
 export class StudentResolver {
@@ -177,13 +178,14 @@ export class StudentResolver {
     @Arg("first_name") first_name: string,
     @Arg("last_name") last_name: string,
     @Arg("email") email: string,
+    @Arg("password") password: string,
     @Arg("preferred_email", {nullable: true}) preferred_email: string
   ): Promise<StudentAPIResponse>
   {
 
     // check if the student exists
     let new_student: DocumentType<Student> | null = await StudentModel.findOne({
-      '$or': [{email: email}, {student_info: preferred_email}]
+      '$or': [{email: email}, {email: preferred_email}]
     });
 
     if (new_student != null) {
@@ -202,6 +204,7 @@ export class StudentResolver {
     new_student.last_name = last_name;
     new_student.email = preferred_email == undefined ? email : preferred_email;
     new_student.edu_email = email; // save the edu email. May be the same as email.
+    new_student.password = bcrypt.hashSync(password, parseInt(process.env.SALT_ROUNDS as string));
 
     new_student.saved_collection = [];
     new_student.user_settings = {
@@ -216,7 +219,24 @@ export class StudentResolver {
     new_student.convenience_tags = [];
     new_student.conveinence_setup = false;
     initializeStudentSearchStatus(new_student);
+
+    let confirm_key = generateConfirmKey()
+    new_student.confirmation_key = generateConfirmKey();
+
     new_student.save();
+
+    // Send email confirmation to the student
+    SendGrid.sendMail({
+      to: email.toString(),
+      email_template_id: SendGridTemplate.STUDENT_EMAIL_CONFIRMATION,
+      template_params: {
+        confirmation_key: confirm_key,
+      frontend_url: frontendPath(),
+      email: email.toString(),
+      first_name: new_student.first_name.toString(),
+      last_name: new_student.last_name.toString()
+      }
+    })
 
     return {
       success: true
@@ -451,7 +471,6 @@ export class StudentResolver {
    */
   @Mutation(() => StudentAPIResponse)
   async updateStudent(@Arg("_id") _id: string, @Arg("new_student"){first_name, last_name, email}: StudentInput): Promise<StudentAPIResponse> {
-    console.log(chalk.bgBlue(`👉 createStudent()`))
 
     let student_doc: DocumentType<Student> | null = await StudentModel.findById(_id)
     if (student_doc == null) {
