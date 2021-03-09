@@ -34,6 +34,7 @@ export class StudentStatisticsResolver {
     ): Promise<StatsResponse>
     {
 
+        if (!context.req.user) return {v: '0'};
         let student_id = context.req.user._id;
 
         if (!ObjectId.isValid(student_id)) return { v: '0' };

@@ -244,6 +244,22 @@ export class StudentResolver {
     };
   }
 
+  @Mutation(() => StudentAPIResponse)
+  async studentEmailConfirmed (
+    @Ctx() context: any
+  ): Promise<StudentAPIResponse>
+  {
+    if (!context.req.user) return {success: false, error: "Not logged in"};
+    let student_id = context.req.user._id;
+
+    let student: DocumentType<Student> | null = await StudentModel.findById(student_id);
+    if (student == null) return { success: false, error: "User does not exist" }
+
+    if (student.confirmation_key == undefined) return { success: true }
+    else return { success: false }
+
+  }
+
   /**
    * Resend email confirmation to the currently logged in student
    * if they have not yet been confirmed.
