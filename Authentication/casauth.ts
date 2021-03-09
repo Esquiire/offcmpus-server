@@ -74,6 +74,7 @@ function(profile: any, done: Function) {
       
             let new_student: DocumentType<Student> = new StudentModel({
               saved_collection: [],
+              date_registered: new Date().toISOString(),
               user_settings: {
                 recieve_email_notifications: true,
                 push_subscriptions: []

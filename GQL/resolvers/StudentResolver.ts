@@ -201,6 +201,7 @@ export class StudentResolver {
     new_student = new StudentModel();
     
     new_student.first_name = first_name;
+    new_student.date_registered = new Date().toISOString();
     new_student.last_name = last_name;
     new_student.email = preferred_email == undefined ? email : preferred_email;
     new_student.edu_email = email; // save the edu email. May be the same as email.

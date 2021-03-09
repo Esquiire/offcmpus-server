@@ -191,6 +191,10 @@ export class Student {
   @prop()
   first_name: String;
 
+  @Field(type => String, {nullable: true})
+  @prop({type: String})
+  date_registered?: string;
+
   @Field()
   @prop()
   last_name: String;

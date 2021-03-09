@@ -616,6 +616,7 @@ type Student {
   confirmation_key: [String!]
   conveinence_setup: Boolean
   convenience_tags: [String!]
+  date_registered: String
   edu_email: String
   elevated_privileges: [String!]
   email: String
