@@ -303,6 +303,17 @@ export class OwnershipResolver {
       RoutingAPI.generateRoutes(saved_prop);
     }
 
+    // See if the landlord already has an ownership document for this
+    // property. If so, decline request.
+    else {
+      let ownerships: DocumentType<Ownership>[] = await OwnershipModel.find({
+        landlord_id,
+        property_id: saved_prop._id
+      });
+
+      if (ownerships.length > 0) return { success: false, error: "Landlord already submitted ownership for this property" }
+    }
+
     let new_ownership: DocumentType<Ownership> = new OwnershipModel()
     // new_ownership.property_id = ???
     new_ownership.property_id = saved_prop._id;

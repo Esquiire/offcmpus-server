@@ -2,7 +2,6 @@ import express from "express";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import cors from "cors";
-import { createServer } from 'http';
 const app = express();
 
 // load environment variablesd
@@ -20,9 +19,13 @@ if (process.env.NODE_ENV == 'test') PORT = "9045";
 
 const MONGO_PREFIX = process.env.MONGO_DB_PREFIX ?? "mongodb+srv";
 const MONGO_HOST = process.env.MONGO_DB_HOST ?? "cluster0.vsneo.mongodb.net";
-const MONGO_URI = 
-  process.env.NODE_ENV == `development` || process.env.NODE_ENV == `test` ? `mongodb://localhost:27017/housing-database` :
-`${MONGO_PREFIX}://${process.env.MONGO_DB_CLUSTER_USERNAME}:${process.env.MONGO_DB_PASSWORD}@${MONGO_HOST}/housing-database?retryWrites=true&w=majority&authSource=admin`;
+const MONGO_URI = ((): string => {
+  if (process.env.NODE_ENV == 'development') return `mongodb://localhost:27017/housing-database`;
+  if (process.env.NODE_ENV == 'test') return `mongodb://localhost:27017/housing-database-test`;
+
+  // production cloud mongodb cluster
+  return `${MONGO_PREFIX}://${process.env.MONGO_DB_CLUSTER_USERNAME}:${process.env.MONGO_DB_PASSWORD}@${MONGO_HOST}/housing-database?retryWrites=true&w=majority&authSource=admin`;
+})()
 
 // setup middleware
 import bodyParser from "body-parser";
@@ -31,8 +34,8 @@ let whitelisted_ips = [
   frontendPath(),
   ...(
     Object.keys(process.env)
-    .filter((key_: string) => key_.substring(0, 13) == "WHITELIST_IP_")
-    .map((key_: string) => `${process.env[key_]!}:${process.env.PORT}`)
+      .filter((key_: string) => key_.substring(0, 13) == "WHITELIST_IP_")
+      .map((key_: string) => `${process.env[key_]!}:${process.env.PORT}`)
   )
 ]
 console.log(whitelisted_ips)
@@ -71,10 +74,10 @@ app.use("/auth", LocalAuthRouter);
 import stripeRouter from './vendors/Stripe'
 app.use("/payments", stripeRouter);
 
-import {NotificationsAPI} from './modules/NotificationsAPI'
-import {StudentModel, Student} from './GQL/entities/Student'
-import {LandlordModel, Landlord} from './GQL/entities/Landlord'
-import {DocumentType} from '@typegoose/typegoose'
+import { NotificationsAPI } from './modules/NotificationsAPI'
+import { StudentModel, Student } from './GQL/entities/Student'
+import { LandlordModel, Landlord } from './GQL/entities/Landlord'
+import { DocumentType } from '@typegoose/typegoose'
 import chalk from 'chalk'
 // test webpush
 app.post('/subscribe/:user_type/:id', async (req, res) => {
@@ -117,7 +120,7 @@ app.post('/subscribe/:user_type/:id', async (req, res) => {
       return;
     }
     else {
-      res.json({success: false, error: "Problem adding subscription"})
+      res.json({ success: false, error: "Problem adding subscription" })
       return;
     }
   }
@@ -153,7 +156,7 @@ app.use("/vendors/aws_s3", awsRouter);
 
 // SendGrid
 import sgMail from '@sendgrid/mail'
-sgMail.setApiKey (process.env.SENDGRID_API_KEY as string)
+sgMail.setApiKey(process.env.SENDGRID_API_KEY as string)
 
 const connectMongo = () =>
   // connect to MongoDB via mongoose
@@ -186,9 +189,10 @@ import { execute, subscribe } from 'graphql';
 import { ApolloServer } from "apollo-server-express"
 import { buildSchema } from "type-graphql";
 import * as http from "http";
-import {StudentResolver, 
-  OwnershipResolver, 
-  LandlordResolver, 
+import {
+  StudentResolver,
+  OwnershipResolver,
+  LandlordResolver,
   FeedbackResolver,
   InstitutionResolver,
   LeaseDocumentResolver,
@@ -196,26 +200,27 @@ import {StudentResolver,
   PropertyResolver,
   FeedResolver,
   StudentStatisticsResolver,
-  LandlordStatisticsResolver} from "./GQL/resolvers"
+  LandlordStatisticsResolver
+} from "./GQL/resolvers"
 import { ObjectIdScalar } from "./GQL/entities";
-import {ObjectId} from 'mongodb'
+import { ObjectId } from 'mongodb'
 import webpush from 'web-push';
-import {SubscriptionServer} from 'subscriptions-transport-ws';
+import { SubscriptionServer } from 'subscriptions-transport-ws';
 
 const StartServer = async (): Promise<{
   server: http.Server;
   apolloServer: ApolloServer;
 }> => {
 
-  const schema = await buildSchema ({
-    resolvers: [StudentResolver, 
-      OwnershipResolver, 
-      LandlordResolver, 
-      InstitutionResolver, 
+  const schema = await buildSchema({
+    resolvers: [StudentResolver,
+      OwnershipResolver,
+      LandlordResolver,
+      InstitutionResolver,
       PropertyResolver,
       LeaseDocumentResolver,
       LeaseResolver,
-      FeedbackResolver, 
+      FeedbackResolver,
       FeedResolver,
       StudentStatisticsResolver,
       LandlordStatisticsResolver],
@@ -223,15 +228,15 @@ const StartServer = async (): Promise<{
     validate: true,
     scalarsMap: [{ type: ObjectId, scalar: ObjectIdScalar }],
   });
-  const apolloServer = new ApolloServer({ 
+  const apolloServer = new ApolloServer({
     schema,
-    context: ({req, res}) => ({
+    context: ({ req, res }) => ({
       getSession: () => req.session,
       req, res
     }),
-    playground: 
-      process.env.NODE_ENV === 'production' ? false 
-      : { settings: { 'request.credentials': "same-origin" } }
+    playground:
+      process.env.NODE_ENV === 'production' ? false
+        : { settings: { 'request.credentials': "same-origin" } }
   });
   apolloServer.applyMiddleware({ app, cors: false });
   try {
@@ -245,7 +250,7 @@ const StartServer = async (): Promise<{
 
   // web-push
   if (process.env.VAPID_PUBLIC != undefined && process.env.VAPID_PRIVATE != undefined) {
-    webpush .setVapidDetails('mailto:test@test.com', 
+    webpush.setVapidDetails('mailto:test@test.com',
       process.env.VAPID_PUBLIC as string,
       process.env.VAPID_PRIVATE as string
     )
@@ -253,7 +258,7 @@ const StartServer = async (): Promise<{
 
   const server = app.listen(PORT, async () => {
     console.log(`🚀 Server running on port ${PORT}`);
-    
+
     new SubscriptionServer({
       execute,
       subscribe,

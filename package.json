@@ -10,6 +10,8 @@
     "gen-test-data": "tsc && node -e \"require('./build/test_data/seed.js').writeData({directory:'../../test_data'});\"",
     "mocha": "nyc mocha --file graphql_tests/mocha_globals.ts -r ts-node/register graphql_tests/**/*.spec.ts",
     "test": "cross-env NODE_ENV=test npm run mocha",
+    "test-experimental": "cross-env NODE_ENV=test npm run mocha-experimental",
+    "mocha-experimental": "mocha --file test/mocha_globals.ts -r ts-node/register test/**/*.test.ts",
     "tdd-server": "cross-env-shell NODE_ENV=development nodemon -e ts,json --exec \"npm run mocha || true\"",
     "build": "tsc -p ."
   },

@@ -1,5 +1,5 @@
-import sgMail, {MailDataRequired} from '@sendgrid/mail'
-import {ClientResponse} from "@sendgrid/client/src/response";
+import sgMail, { MailDataRequired } from '@sendgrid/mail'
+import { ClientResponse } from "@sendgrid/client/src/response";
 import chalk from 'chalk'
 
 export const SendGridTemplate = {
@@ -17,28 +17,34 @@ const _sendMail_ = (mail_data: MailDataRequired | MailDataRequired[]): Promise<[
 interface ISendMail {
   to: string
   email_template_id: string
-  template_params?: {[key: string]: string}
+  template_params?: { [key: string]: string }
 }
 
 const SendGrid = {
-  sendMail: ({to, email_template_id, template_params}: ISendMail): void => {
+  sendMail: ({ to, email_template_id, template_params }: ISendMail): void => {
+
+    if (process.env.NODE_ENV == 'test') {
+      console.log('⏩ Skipped sending email.');
+      return;
+    }
+
     _sendMail_({
       to,
       from: (process.env.GMAIL_EMAIL as string),
       templateId: email_template_id,
-      ...(template_params ? 
-            {dynamic_template_data: template_params}
-            : {}
-        )
+      ...(template_params ?
+        { dynamic_template_data: template_params }
+        : {}
+      )
     })
-    .then(() => {
-      console.log(chalk.bgGreen(`✔ Email Sent to ${to}!`))
-    }, err => {
-      if (err) {
-        console.log(chalk.bgRed(`❌ Error: Problem sending email to ${to}`))
-        console.log(err.response.body)
-      }
-    })
+      .then(() => {
+        console.log(chalk.bgGreen(`✔ Email Sent to ${to}!`))
+      }, err => {
+        if (err) {
+          console.log(chalk.bgRed(`❌ Error: Problem sending email to ${to}`))
+          console.log(err.response.body)
+        }
+      })
   }
 }
 export default SendGrid
