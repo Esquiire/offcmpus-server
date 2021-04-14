@@ -107,3 +107,45 @@ describe("createLandlord", () => {
     });
 
 });
+
+describe("updatePhoneNumber", () => {
+
+    it("add phone number to a landlord's account", async () => {
+        const { mutate } = apolloServerTestClient;
+
+        // 1. create an existing landlord
+        let landlordGen: GeneratorResult<Landlord> | null = null;
+        do {
+            landlordGen = await LandlordGenerator();
+        } while (landlordGen == null);
+
+        // 2. create a new phone number that is not on this landlord
+        let landlord: DocumentType<Landlord> = landlordGen.getData();
+        let newPhoneNumber = "0000000000_sample";
+        expect(landlord.phone_number).not.eq(newPhoneNumber);
+
+        // 3. update the phone number
+        let response = await mutate<{ updatePhoneNumber: LandlordAPIResponse }>({
+            mutation: gql`
+            mutation UpdatePhoneNumber($landlord_id: String!, $phone_number: String!) {
+                updatePhoneNumber(landlord_id: $landlord_id, phone_number: $phone_number) {
+                    success, error, data, { phone_number }
+                }
+            }
+            `,
+            variables: {
+                landlord_id: landlord._id.toString(),
+                phone_number: newPhoneNumber
+            }
+        });
+
+        expect(response.data).to.not.be.undefined.and.to.not.be.null;
+        expect(response.data!.updatePhoneNumber).to.not.be.undefined.and.to.not.be.null;
+        expect(response.data!.updatePhoneNumber.success).to.be.true;
+        expect(response.data!.updatePhoneNumber.error).to.be.null;
+        expect(response.data!.updatePhoneNumber.data).to.not.be.null.and.to.not.be.undefined;
+        expect(response.data!.updatePhoneNumber.data!.phone_number).to.eq(newPhoneNumber);
+
+    });
+
+});
