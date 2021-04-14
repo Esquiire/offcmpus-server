@@ -11,7 +11,8 @@ import { apolloServerTestClient } from './mocha_globals';
 import { Student, StudentModel, SearchStatus, StudentAPIResponse } from '../GQL/entities/Student'
 import { DocumentType } from '@typegoose/typegoose';
 
-import { StudentGenerator, GeneratorResult, setSearchStatus } from './generators/student.gen';
+import { GeneratorResult } from './generators';
+import { StudentGenerator, setSearchStatus } from './generators/student.gen';
 
 const { expect } = chai;
 

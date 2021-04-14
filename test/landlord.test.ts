@@ -10,6 +10,8 @@ import { apolloServerTestClient } from './mocha_globals';
 
 import { Landlord, LandlordModel, LandlordAPIResponse } from '../GQL/entities/Landlord';
 import { DocumentType } from '@typegoose/typegoose';
+import { GeneratorResult } from './generators';
+import { LandlordGenerator } from './generators/landlord.gen';
 
 const { expect } = chai;
 
@@ -69,6 +71,39 @@ describe("createLandlord", () => {
 
     it("fails to create a new landlord that already exists", async () => {
 
+        // 1. create an existing landlord
+        let landlordGen: GeneratorResult<Landlord> | null = null;
+
+        do {
+            landlordGen = await LandlordGenerator();
+        } while (landlordGen == null);
+
+        // 2. create a new landlord with the same credentials
+        const { mutate } = apolloServerTestClient;
+        let landlord: DocumentType<Landlord> = landlordGen.getData();
+
+        let response = await mutate<{ createLandlord: LandlordAPIResponse }>({
+            mutation: gql`
+            mutation CreateLandlord($firstName: String!, $lastName: String!, $email: String!, $password: String!) {
+                createLandlord(new_landlord:{first_name:$firstName, last_name: $lastName, email: $email, password: $password}) {
+                    success, error, data { first_name, last_name, email }
+                }
+            }
+            `,
+            variables: {
+                firstName: landlord.first_name,
+                lastName: landlord.last_name,
+                email: landlord.email,
+                password: faker.internet.password()
+            }
+        });
+
+        // 3. Expect an error
+        expect(response.data).to.not.be.undefined.and.to.not.be.null;
+        expect(response.data!.createLandlord).to.not.be.undefined.and.to.not.be.null;
+        expect(response.data!.createLandlord.data).to.be.null;
+        expect(response.data!.createLandlord.success).to.be.false;
+        expect(response.data!.createLandlord.error).to.not.be.null.and.to.not.be.undefined;
     });
 
 });
