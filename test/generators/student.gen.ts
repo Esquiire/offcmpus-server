@@ -2,20 +2,11 @@
 import { Student, StudentModel, StudentAPIResponse } from '../../GQL/entities/Student'
 
 import { apolloServerTestClient } from '../mocha_globals';
-import { DocumentType } from '@typegoose/typegoose'
+import { DocumentType } from '@typegoose/typegoose';
 import faker from 'faker';
 import { gql } from 'apollo-server-express';
 
-export class GeneratorResult<T> {
-
-    private data: DocumentType<T>;
-
-    constructor(data_: DocumentType<T>) {
-        this.data = data_;
-    }
-
-    getData(): DocumentType<T> { return this.data; }
-}
+import { GeneratorResult } from '.';
 
 export const StudentGenerator = async (): Promise<GeneratorResult<Student> | null> => {
 
