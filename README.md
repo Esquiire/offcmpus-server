@@ -1,4 +1,4 @@
-![Offcmpus Splash](img/offcmpus_splash.png)
+![Offcmpus Splash](https://github.com/Esquiire/offcmpus-mobile/blob/master/img/offcmpus_splash.png)
 
 # Offcmpus Server
 
